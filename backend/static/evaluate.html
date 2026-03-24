@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ODP Evaluation Survey</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <style>
+    .eval-header { position:sticky;top:0;z-index:100;background:rgba(4,6,15,.95);backdrop-filter:blur(20px);border-bottom:1px solid var(--border); }
+    .eval-header-inner { display:flex;align-items:center;justify-content:space-between;padding:14px 24px;gap:16px; }
+    .eval-progress-bar { height:3px;background:var(--border); }
+    .eval-progress-fill { height:100%;background:linear-gradient(90deg,var(--amber),var(--cyan));transition:width 600ms ease; }
+    .eval-progress-label { display:flex;justify-content:space-between;padding:6px 24px;font-size:.72rem; }
+    .completion-screen { text-align:center;padding:64px 32px; }
+    .completion-icon { font-size:4rem;margin-bottom:24px; }
+  </style>
+</head>
+<body>
+
+<div id="app">
+  <div style="display:flex;align-items:center;justify-content:center;min-height:100vh;flex-direction:column;gap:16px">
+    <div class="spinner"></div>
+    <p style="font-family:var(--mono);font-size:.78rem;color:var(--text-muted)">Loading your survey…</p>
+  </div>
+</div>
+
+<script src="/js/utils.js"></script>
+<script src="/js/api.js"></script>
+<script src="/js/evaluate.js"></script>
+</body>
+</html>

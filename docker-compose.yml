@@ -1,0 +1,40 @@
+version: "3.9"
+
+services:
+
+  nginx:
+    image: nginx:1.25-alpine
+    container_name: odp-nginx
+    ports:
+      - "${PORT:-8080}:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: odp-backend
+    environment:
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD:-admin123}
+      - SECRET_KEY=${SECRET_KEY:-change-me-in-production}
+      - BASE_URL=${BASE_URL:-http://localhost:8080}
+      - DB_PATH=/data/odp_eval.db
+      - TOKEN_EXPIRE_HOURS=${TOKEN_EXPIRE_HOURS:-24}
+    volumes:
+      - odp_data:/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:8000/api/health"]
+      interval: 20s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+
+volumes:
+  odp_data:
+    driver: local

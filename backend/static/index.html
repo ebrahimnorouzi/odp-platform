@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ODP Eval — Admin</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <style>
+    .eval-header { position:sticky;top:0;z-index:100;background:rgba(4,6,15,.95);backdrop-filter:blur(20px);border-bottom:1px solid var(--border); }
+    .eval-header-inner { display:flex;align-items:center;justify-content:space-between;padding:14px 24px;gap:16px; }
+    .eval-progress-bar { height:3px;background:var(--border);position:relative; }
+    .eval-progress-fill { position:absolute;top:0;left:0;height:100%;background:linear-gradient(90deg,var(--amber),var(--cyan));transition:width 600ms cubic-bezier(.4,0,.2,1); }
+    .eval-progress-label { display:flex;justify-content:space-between;align-items:center;padding:6px 24px;font-size:.72rem; }
+    #app { min-height: 100vh; }
+  </style>
+</head>
+<body class="grid-bg">
+
+<header class="site-header">
+  <div class="inner">
+    <a href="/" class="logo">
+      <div class="logo-icon">OE</div>
+      <div>
+        <div class="logo-text">ODP Eval</div>
+        <div class="logo-sub">Ontology Design Pattern Evaluation Platform</div>
+      </div>
+    </a>
+    <nav class="nav-links">
+      <a href="/" class="nav-link active">Admin</a>
+    </nav>
+  </div>
+</header>
+
+<div id="app">
+  <div style="display:flex;align-items:center;justify-content:center;min-height:60vh;gap:16px;flex-direction:column">
+    <div class="spinner"></div>
+    <p style="font-family:var(--mono);font-size:.78rem;color:var(--text-muted)">Loading…</p>
+  </div>
+</div>
+
+<footer class="site-footer">
+  ODP Evaluation Platform v2 · FastAPI + SQLite ·
+  <a href="/api/info" style="color:var(--text-muted)">System Info</a>
+</footer>
+
+<script src="/js/utils.js"></script>
+<script src="/js/api.js"></script>
+<script src="/js/admin.js"></script>
+</body>
+</html>

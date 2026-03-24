@@ -1,0 +1,48 @@
+year,title,pdf_link,Type,ODPs links,CQs,Scenario
+2023,An Ontology Design Pattern for Representing Causality,https://ceur-ws.org/Vol-3636/paper4.pdf,ODP,https://github.com/utkarshani/CausalPattern,"CQ1: What events are responsible for the pavement being slippery?
+CQ2: What would be the outcome of turning the sprinkler system on or off?
+CQ3: How strong is the causal link between the sprinkler being on and the pavement being wet?
+CQ4: What if the pavement is not wet — how would it affect the pavement being slippery?
+CQ5: Is the medication intake caused by the presence of outdoor allergens such as pollen?","It is rainy season. The sprinkler is on, it is raining, the pavement is wet, and the pavement is slippery. Separately: the presence of outdoor allergens (pollen, AQI), a patient experiencing coughing symptoms, and the intake of medication are causally linked."
+2023,An Ontology Design Pattern for Role-Dependent Names,https://ceur-ws.org/Vol-3636/paper6.pdf,ODP,,"CQ1: Under what pseudonym did C. S. Lewis publish Spirit in Bondage?
+CQ2: What alternative name did C. S. Lewis use as a book writer?
+CQ3: Show the trajectories of rivers which cross national parks.","An author adopts different names to publish books. C. S. Lewis used the pseudonym Clive Hamilton. The pattern also covers name changes after marriage and entities that require different names depending on the role they play in a given context."
+2022,An Ontology Design Pattern for Historical Metrological Practices,https://ceur-ws.org/Vol-3352/pattern1.pdf,ODP,http://ontologydesignpatterns.org/wiki/Submissions:HistoricalMetrology,"CQ1: What unit of measurement was used in a specific historical context?
+CQ2: Which standard was a particular measurement unit based on?
+CQ3: What was the conversion factor between two historical measurement units?","Historians and archivists working with pre-modern documents encounter a wide variety of measurement units that varied by region, time period, and commodity. A medieval merchant's ledger records quantities in the London foot or the Paris ell. Researchers need to represent these units and their relationships to modern equivalents."
+2022,A Pattern for Representing Scientific Taxonomies,https://ceur-ws.org/Vol-3352/pattern3.pdf,ODP,https://github.com/shirlysteph/taxonomy-odp,"CQ1: What is the taxonomic rank of a given organism?
+CQ2: Which organisms belong to a specific taxonomic group?
+CQ3: What is the full classification hierarchy of a species?
+CQ4: Are two species part of the same genus?","Biologists need to represent taxonomic classifications of living organisms following the Linnaean system. Homo sapiens belongs to genus Homo, family Hominidae, order Primates, class Mammalia, phylum Chordata, and kingdom Animalia. The pattern must support querying and navigating this hierarchical structure."
+2021,A Pattern for Modeling Causal Relations Between Events,https://ceur-ws.org/Vol-3011/pattern1.pdf,ODP,,"CQ1: What events caused event X?
+CQ2: What are the effects of event Y?
+CQ3: What is the degree of causal influence between two events?","In historical analysis, researchers represent causal chains between events. The assassination of Archduke Franz Ferdinand is considered a cause of World War I. The pattern should allow representing direct and indirect causal relationships, as well as degrees of causality."
+2021,An Ontology Design Pattern for Modeling Pollution,https://ceur-ws.org/Vol-3011/pattern3.pdf,ODP,http://ontologydesignpatterns.org/wiki/Submissions:Pollution,"CQ1: What is the source of a particular pollution event?
+CQ2: What pollutants are present at a given location?
+CQ3: What are the effects of pollution on the environment at a specific site?
+CQ4: When was a pollution event recorded?","Environmental agencies monitor pollution events in urban and industrial areas. A river may be polluted by industrial discharge containing heavy metals. Air quality monitoring stations record particulate matter and nitrogen dioxide levels. The pattern should represent pollution sources, types, affected areas, and temporal information."
+2019,An Ontology Design Pattern for Representing Recurrent Events,https://ceur-ws.org/Vol-2459/pattern1.pdf,ODP,,"CQ1: When does event X recur?
+CQ2: What is the frequency of a recurring event?
+CQ3: Which instances of a recurring event occurred within a given time period?","A calendar system represents recurring events such as weekly team meetings, annual conferences, or public holidays. The pattern should capture the recurrence rule (e.g. every Monday, last Friday of each month), the series start and end dates, individual occurrences, and exception dates when the event does not occur."
+2018,Two Ontology Design Patterns toward Energy Efficiency in Buildings,https://ceur-ws.org/Vol-2195/pattern_paper_2.pdf,ODP,http://ontologydesignpatterns.org/wiki/Submissions:Energy_Efficiency,"CQ1: What is the energy consumption of a building in a given period?
+CQ2: Which systems in a building contribute most to energy consumption?
+CQ3: What energy efficiency measures have been applied to a building?
+CQ4: How does the energy performance of a building compare to a baseline?","A building energy management system tracks energy consumption across HVAC, lighting, and appliances. Facility managers identify inefficient systems and measure the impact of energy-saving interventions over time. Buildings have multiple energy meters recording consumption at regular intervals."
+2016,A Core Pattern for Events,http://ontologydesignpatterns.org/images/5/52/WOP2016_paper_04.pdf,ODP,http://ontologydesignpatterns.org/wiki/Submissions:EventCore,"CQ1: What participants were involved in an event?
+CQ2: When and where did an event occur?
+CQ3: What was the duration of an event?
+CQ4: What was the outcome of an event?","A news archive application represents diverse events ranging from elections to sports competitions and natural disasters. Each event has participants (people, organisations, places), a time period, a location, and outcomes. The pattern should be general enough across domains while capturing the essential structure common to all events."
+2016,The Algorithm-Implementation-Execution ODP,http://ontologydesignpatterns.org/images/4/41/WOP2016_paper_07.pdf,ODP,http://ontologydesignpatterns.org/wiki/Submissions:AlgorithmImplementationExecution,"CQ1: Which algorithm does a given software implementation realise?
+CQ2: What parameters were used in a specific execution of an algorithm?
+CQ3: On what dataset was an algorithm executed?","A scientific workflow system represents computational experiments reproducibly. Researchers implement algorithms (e.g. k-means clustering, SPARQL query optimisation) in software. Each run on a dataset constitutes an execution recording input parameters, runtime environment, and outputs. The pattern supports provenance and reproducibility."
+2015,The Hazardous Situation Ontology Design Pattern,https://ceur-ws.org/Vol-1461/WOP2015_pattern_abstract_7.pdf,ODP,http://ontologydesignpatterns.org/wiki/Submissions:HazardousSituation,"CQ1: What hazard is present in a given situation?
+CQ2: Who or what is at risk in a hazardous situation?
+CQ3: What is the likelihood of harm occurring?
+CQ4: What safety measures are in place to mitigate the hazard?","A risk assessment system for industrial facilities represents hazardous situations. A chemical plant stores flammable substances near an ignition source, creating a fire hazard for workers. The pattern captures hazard type, entities at risk, probability of harm, and mitigating measures."
+2014,An Ontology Design Pattern for Activity Reasoning,https://ceur-ws.org/Vol-1302/paper8.pdf,ODP,http://descartes-core.org/ontologies/activities/1.0/ActivityPattern.owl,"CQ1: What are the sub-activities of a complex activity?
+CQ2: What resources does an activity require?
+CQ3: What are the preconditions for an activity to begin?
+CQ4: What are the effects of completing an activity?","A smart home system recognises and plans complex human activities. Preparing breakfast involves sub-activities such as boiling water, toasting bread, and pouring juice. Each sub-activity requires specific resources (kettle, toaster, juice carton) and has preconditions and postconditions."
+2013,Event Processing in RDF,https://ceur-ws.org/Vol-1188/paper_1.pdf,ODP,http://ontologydesignpatterns.org/wiki/Submissions:EventProcessing,"CQ1: What events have occurred within a given time window?
+CQ2: How are complex events derived from simple events?
+CQ3: What is the temporal ordering of a sequence of events?","A sensor network monitoring system processes streams of low-level sensor events and derives high-level complex events. Three consecutive temperature readings above 80°C within one minute constitute a critical overheating event. The pattern supports temporal window queries and event composition rules."
