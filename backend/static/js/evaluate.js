@@ -56,7 +56,7 @@ const Evaluate = (() => {
             <div class="stat-card violet"><div class="stat-value">~${Math.ceil(p.n_patterns*p.questions.filter(q=>q.type==='likert').length*0.3+p.n_patterns*2)} min</div><div class="stat-label">Estimated time</div></div>
           </div>
           <div class="alert alert-info mb-24" style="text-align:left">
-            ℹ️ Your responses are saved automatically when you click <strong>Submit Survey</strong> at the end. You do not need to download or email anything.
+            ℹ️ Your responses are saved automatically when you click Submit Survey at the end. You do not need to download or email anything.
           </div>
           <details style="text-align:left;margin-bottom:24px">
             <summary style="cursor:pointer;font-family:var(--mono);font-size:.78rem;color:var(--text-muted)">

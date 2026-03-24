@@ -27,7 +27,6 @@ const Admin = (() => {
             </div>
             <button id="login-btn" class="btn btn-primary w-full">Sign in →</button>
             <p class="mt-16" style="font-size:.75rem;color:var(--text-muted);text-align:center">
-              Default: <code class="mono">admin123</code> · set via <code class="mono">ADMIN_PASSWORD</code> env var
             </p>
           </div>
         </div>

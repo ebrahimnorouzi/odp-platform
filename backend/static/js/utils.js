@@ -129,7 +129,7 @@ const Utils = (() => {
     const e = document.createElement(tag);
     Object.entries(attrs).forEach(([k, v]) => {
       if (k === 'class') e.className = v;
-      else if (k === 'style') Object.assign(e.style, v);
+      else if (k === 'style') { if (typeof v === 'string') e.setAttribute('style', v); else Object.assign(e.style, v); }
       else if (k.startsWith('on')) e.addEventListener(k.slice(2), v);
       else e.setAttribute(k, v);
     });
