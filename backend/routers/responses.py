@@ -193,8 +193,9 @@ def start_session(slug: str, db: Session = Depends(get_db)):
     slim = [{k: p[k] for k in keep if k in p} for p in assigned]
 
     import secrets
-    existing = db.query(EvalSession).filter(EvalSession.survey_id == s.id).count()
-    session  = EvalSession(survey_id=s.id, token=secrets.token_urlsafe(32), num=existing+1)
+    from sqlalchemy import func
+    max_num = db.query(func.max(EvalSession.num)).filter(EvalSession.survey_id == s.id).scalar() or 0
+    session  = EvalSession(survey_id=s.id, token=secrets.token_urlsafe(32), num=max_num+1)
     session.patterns_assigned = slim
     db.add(session); db.commit(); db.refresh(session)
 

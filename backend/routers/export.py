@@ -14,7 +14,9 @@ def _rows(survey: Survey, responses: list[Response]):
     qs       = survey.questions
     q_ids    = [q["id"] for q in qs]
     headers  = [
-        "survey_id","survey_title","session_num",
+        "response_id",
+        "survey_id","survey_title",
+        "session_id","session_num","evaluator_token",
         "pattern_id","pattern_title",
         "started_at","completed_at","duration_ms","duration_human",
         "submitted_at","session_duration_ms","session_duration_human",
@@ -29,9 +31,12 @@ def _rows(survey: Survey, responses: list[Response]):
     rows = []
     for r in responses:
         row = {
+            "response_id":            r.id,
             "survey_id":              survey.id,
             "survey_title":           survey.title,
-            "session_num":            r.session.num if r.session else "",
+            "session_id":             r.session.id    if r.session else "",
+            "session_num":            r.session.num   if r.session else "",
+            "evaluator_token":        r.session.token if r.session else "",
             "pattern_id":             r.pattern_id,
             "pattern_title":          r.pattern_title,
             "started_at":             r.started_at.isoformat()  if r.started_at  else "",

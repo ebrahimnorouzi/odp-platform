@@ -6,7 +6,7 @@ import json, os, secrets
 from datetime import datetime
 from sqlalchemy import (
     create_engine, Column, Integer, String, Text,
-    DateTime, Boolean, ForeignKey
+    DateTime, Boolean, ForeignKey, event
 )
 from sqlalchemy.orm import DeclarativeBase, relationship, Session
 from sqlalchemy.pool import StaticPool
@@ -17,6 +17,12 @@ engine  = create_engine(
     connect_args={"check_same_thread": False},
     poolclass=StaticPool,
 )
+
+@event.listens_for(engine, "connect")
+def _set_sqlite_pragma(dbapi_conn, _):
+    dbapi_conn.execute("PRAGMA journal_mode=WAL")
+    dbapi_conn.execute("PRAGMA synchronous=NORMAL")
+    dbapi_conn.execute("PRAGMA busy_timeout=5000")
 
 class Base(DeclarativeBase):
     pass
