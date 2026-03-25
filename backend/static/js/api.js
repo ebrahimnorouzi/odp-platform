@@ -65,8 +65,20 @@ const API = (() => {
     responses:  id      => get(`/api/surveys/${id}/responses`),
     sessions:   id      => get(`/api/surveys/${id}/sessions`),
     stats:      id      => get(`/api/surveys/${id}/stats`),
-    exportCSV:  id      => { window.open(`/api/surveys/${id}/export/csv`,   '_blank'); },
-    exportXLSX: id      => { window.open(`/api/surveys/${id}/export/excel`, '_blank'); },
+    exportCSV:  id => get(`/api/surveys/${id}/export/csv`).then(blob => {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = `survey-${id}-responses.csv`;
+      document.body.appendChild(a); a.click();
+      document.body.removeChild(a); URL.revokeObjectURL(url);
+    }),
+    exportXLSX: id => get(`/api/surveys/${id}/export/excel`).then(blob => {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = `survey-${id}.xlsx`;
+      document.body.appendChild(a); a.click();
+      document.body.removeChild(a); URL.revokeObjectURL(url);
+    }),
   };
 
   const evaluate = {
