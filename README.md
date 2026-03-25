@@ -24,30 +24,7 @@
 | **Admin authentication** | JWT password auth, configurable via env var, 24h token expiry |
 | **REST API** | Full OpenAPI spec at `/api/docs`, ReDoc at `/api/redoc` |
 | **Documentation site** | MkDocs Material site compiled into a Docker container, served at `/docs/` |
-| **Fully containerised** | 3-service Docker Compose: Nginx + FastAPI/uvicorn + MkDocs; one command to start |
-
----
-
-## Architecture
-
-```
-                        ┌─────────────────────────────┐
-  Browser ──── :8080 ──▶│         Nginx (proxy)        │
-                        └──────┬──────────┬────────────┘
-                               │          │
-                    /api/*,/   │          │  /docs/
-                               ▼          ▼
-                  ┌────────────────┐  ┌──────────────┐
-                  │  FastAPI :8000 │  │  MkDocs :80  │
-                  │  (Python 3.12) │  │  (nginx)     │
-                  │                │  └──────────────┘
-                  │  /static/ ─────┼──▶ Admin SPA
-                  │  /evaluate ────┼──▶ Evaluator form
-                  │  /api/ ────────┼──▶ REST endpoints
-                  │                │
-                  │  SQLite DB ─────────▶ Docker volume
-                  └────────────────┘       (persistent)
-```
+| **Fully containerised** | Single-service Docker Compose: FastAPI/uvicorn; one command to start |
 
 ---
 
@@ -61,19 +38,24 @@ cd odp-platform
 cp .env.example .env        # edit ADMIN_PASSWORD and SECRET_KEY
 ```
 
-### 2. Start
+### 2. Build & run
 
 ```bash
-docker compose up -d
-# or using the Makefile:
-make up
+docker build -t odp-platform ./backend
+docker run -d \
+  --name odp-backend \
+  -p 8080:8080 \
+  -v odp_data:/data \
+  -e ADMIN_PASSWORD=admin123 \
+  -e SECRET_KEY=change-me-in-production \
+  -e BASE_URL=http://localhost:8080 \
+  odp-platform
 ```
 
 | URL | What |
 |-----|------|
 | `http://localhost:8080/` | Admin dashboard |
 | `http://localhost:8080/evaluate?token=…` | Evaluator survey form |
-| `http://localhost:8080/docs/` | Documentation site |
 | `http://localhost:8080/api/docs` | Swagger UI |
 
 ### 3. Create your first survey
@@ -142,7 +124,7 @@ q_<question_id>  × N questions
 | `ADMIN_PASSWORD` | `admin123` | Admin login password |
 | `SECRET_KEY` | `change-me…` | JWT signing secret |
 | `BASE_URL` | `http://localhost:8080` | Used to build evaluator links |
-| `PORT` | `8080` | External port for nginx |
+| `PORT` | `8080` | External port |
 | `TOKEN_EXPIRE_HOURS` | `24` | JWT token lifetime |
 
 ---
@@ -189,37 +171,28 @@ Since each survey is independent:
 
 ```
 odp-platform/
-├── docker-compose.yml        ← Orchestrates 3 services
 ├── .env.example              ← Copy to .env
 ├── Makefile                  ← Dev shortcuts
 ├── sample.csv                ← 14 ODP patterns for testing
 │
-├── backend/                  ← FastAPI application
-│   ├── main.py               ← App entry point
-│   ├── database.py           ← SQLAlchemy models (Survey, Link, Response)
-│   ├── schemas.py            ← Pydantic v2 schemas
-│   ├── auth.py               ← JWT authentication
-│   ├── requirements.txt
-│   ├── Dockerfile
-│   ├── routers/
-│   │   ├── surveys.py        ← CRUD + CSV upload + link generation
-│   │   ├── responses.py      ← Evaluate + submit + stats
-│   │   └── export.py         ← CSV and Excel export
-│   └── static/               ← Frontend SPA
-│       ├── index.html        ← Admin dashboard
-│       ├── evaluate.html     ← Evaluator form
-│       ├── css/style.css     ← Design system
-│       └── js/
-│           ├── utils.js      ← Shared utilities
-│           ├── api.js        ← API client (fetch wrapper)
-│           ├── admin.js      ← Admin UI logic
-│           └── evaluate.js   ← Evaluator form logic
-│
-├── docs/                     ← MkDocs documentation
-│   ├── mkdocs.yml
-│   ├── Dockerfile            ← Builds & serves MkDocs
-│   └── docs/                 ← Markdown source
-│
-└── nginx/
-    └── nginx.conf            ← Routes /docs/ → MkDocs, rest → FastAPI
+└── backend/                  ← FastAPI application
+    ├── main.py               ← App entry point
+    ├── database.py           ← SQLAlchemy models (Survey, Link, Response)
+    ├── schemas.py            ← Pydantic v2 schemas
+    ├── auth.py               ← JWT authentication
+    ├── requirements.txt
+    ├── Dockerfile
+    ├── routers/
+    │   ├── surveys.py        ← CRUD + CSV upload + link generation
+    │   ├── responses.py      ← Evaluate + submit + stats
+    │   └── export.py         ← CSV and Excel export
+    └── static/               ← Frontend SPA
+        ├── index.html        ← Admin dashboard
+        ├── evaluate.html     ← Evaluator form
+        ├── css/style.css     ← Design system
+        └── js/
+            ├── utils.js      ← Shared utilities
+            ├── api.js        ← API client (fetch wrapper)
+            ├── admin.js      ← Admin UI logic
+            └── evaluate.js   ← Evaluator form logic
 ```
