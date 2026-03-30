@@ -23,6 +23,25 @@ const Evaluate = (() => {
     startTime: null, patternStart: null,
   };
 
+  // ── Expand multi-track patterns into one step per track ───────
+  function expandPatterns(patterns) {
+    const trackKeys = p => Object.keys(p).filter(k => k.endsWith('_link') && k !== 'pdf_link');
+    const expanded = [];
+    for (const pat of patterns) {
+      const tracks = trackKeys(pat);
+      if (tracks.length <= 1) {
+        expanded.push({ ...pat, _track: tracks[0] || null });
+      } else {
+        tracks.forEach(tk => expanded.push({ ...pat, _track: tk }));
+      }
+    }
+    return expanded;
+  }
+
+  function trackLabel(tk) {
+    return tk ? (LINK_LABELS[tk] || tk.replace(/_link$/, '').replace(/_/g, ' ')) : null;
+  }
+
   async function init() {
     const slug = new URLSearchParams(location.search).get('s');
     if (!slug) { showError('No survey link detected. Use the link provided to you.'); return; }
@@ -30,11 +49,17 @@ const Evaluate = (() => {
 
     try {
       const payload = await API.evaluate.start(slug);
+      // Expand: one step per track link per pattern row
+      const expanded = expandPatterns(payload.patterns);
+      payload.patterns   = expanded;
+      payload.n_patterns = expanded.length;
       state.payload   = payload;
       state.startTime = Date.now();
-      state.responses = payload.patterns.map(p => ({
+      state.responses = expanded.map(p => ({
         pattern_id:    p._id ?? 0,
-        pattern_title: p.title || '',
+        pattern_title: p._track
+          ? `${p.title || p.id || ''} [${trackLabel(p._track)}]`
+          : (p.title || ''),
         started_at:    null,
         completed_at:  null,
         duration_ms:   null,
@@ -76,9 +101,10 @@ const Evaluate = (() => {
             </summary>
             <div style="margin-top:12px">
               ${p.patterns.map((pt,i)=>`
-                <div style="padding:8px 0;border-bottom:1px solid var(--border);font-size:.85rem">
-                  <span style="font-family:var(--mono);color:var(--amber);font-size:.7rem;margin-right:8px">#${i+1}</span>
-                  ${esc(pt.title || Object.values(pt).find(v=>v&&v.length<100) || 'Pattern '+(i+1))}
+                <div style="padding:8px 0;border-bottom:1px solid var(--border);font-size:.85rem;display:flex;align-items:baseline;gap:8px">
+                  <span style="font-family:var(--mono);color:var(--amber);font-size:.7rem;flex-shrink:0">#${i+1}</span>
+                  <span>${esc(pt.title || pt.id || 'Pattern '+(i+1))}</span>
+                  ${pt._track?`<span style="font-family:var(--mono);font-size:.68rem;color:var(--cyan);white-space:nowrap">${esc(trackLabel(pt._track))}</span>`:''}
                 </div>`).join('')}
             </div>
           </details>
@@ -138,20 +164,29 @@ const Evaluate = (() => {
     const card = el('div', { class:'pattern-card', style:'animation:fadeUp .3s ease both' });
 
     // Header
+    const tLabel = trackLabel(pat._track);
     const hdr = el('div', { class:'pattern-card-header' });
     hdr.innerHTML = `
       <div class="pattern-number">Pattern ${idx+1} of ${patterns.length}</div>
-      <div class="pattern-title">${esc(getf(pat,'title') || 'Pattern '+(idx+1))}</div>
+      ${tLabel ? `<div style="margin:6px 0 2px;display:flex;align-items:center;gap:8px">
+        <span style="font-family:var(--mono);font-size:.72rem;background:rgba(78,201,240,.12);color:var(--cyan);border:1px solid rgba(78,201,240,.3);padding:2px 10px;border-radius:20px">
+          ${esc(tLabel)}
+        </span>
+      </div>` : ''}
+      <div class="pattern-title">${esc(getf(pat,'title') || pat.id || 'Pattern '+(idx+1))}</div>
       <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">
         ${getf(pat,'year')?`<span class="badge badge-muted">${esc(getf(pat,'year'))}</span>`:''}
         ${getf(pat,'Type')||getf(pat,'type')?`<span class="badge badge-violet">${esc(getf(pat,'Type')||getf(pat,'type'))}</span>`:''}
       </div>
-      <div class="pattern-links">
-        ${Object.keys(pat).filter(k => k.endsWith('_link') || k === 'ODPs links').map(k => {
-          const v = pat[k]; if (!v) return '';
-          const name = LINK_LABELS[k] || ('🔗 ' + k.replace(/_link$/, '').replace(/_/g, ' '));
-          return `<a class="pattern-link" href="${esc(v)}" target="_blank" rel="noopener">${name}</a>`;
-        }).join('')}
+      <div class="pattern-links" style="margin-top:12px">
+        ${pat._track && pat[pat._track] ? `
+          <a class="btn btn-cyan btn-sm" href="${esc(pat[pat._track])}" target="_blank" rel="noopener"
+             style="display:inline-flex;align-items:center;gap:6px;text-decoration:none">
+            📂 Open &amp; review this generated ODP ↗
+          </a>` : ''}
+        ${Object.keys(pat).filter(k => (k === 'pdf_link' || k === 'ODPs links') && pat[k]).map(k =>
+          `<a class="pattern-link" href="${esc(pat[k])}" target="_blank" rel="noopener">${esc(LINK_LABELS[k] || k)}</a>`
+        ).join('')}
       </div>`;
     card.appendChild(hdr);
 
