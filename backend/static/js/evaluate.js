@@ -57,9 +57,8 @@ const Evaluate = (() => {
       state.startTime = Date.now();
       state.responses = expanded.map(p => ({
         pattern_id:    p._id ?? 0,
-        pattern_title: p._track
-          ? `${p.title || p.id || ''} [${trackLabel(p._track)}]`
-          : (p.title || ''),
+        pattern_title: p.title || '',
+        pattern_link:  p._track ? (p[p._track] || '') : '',
         started_at:    null,
         completed_at:  null,
         duration_ms:   null,

@@ -71,6 +71,7 @@ class StartSessionOut(BaseModel):
 class PatternResponse(BaseModel):
     pattern_id:    int
     pattern_title: str
+    pattern_link:  str = ""
     answers:       dict[str, Any]
     started_at:    Optional[datetime] = None
     completed_at:  Optional[datetime] = None
@@ -88,6 +89,7 @@ class ResponseOut(BaseModel):
     session_num:   Optional[int]
     pattern_id:    int
     pattern_title: str
+    pattern_link:  str = ""
     answers:       dict[str, Any]
     started_at:    Optional[datetime]
     completed_at:  Optional[datetime]

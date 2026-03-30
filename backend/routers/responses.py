@@ -224,6 +224,7 @@ def submit_responses(body: SubmitResponses, db: Session = Depends(get_db)):
         r = Response(
             survey_id=session.survey_id, session_id=session.id,
             pattern_id=pr.pattern_id, pattern_title=pr.pattern_title,
+            pattern_link=pr.pattern_link,
             started_at=pr.started_at, completed_at=pr.completed_at,
             duration_ms=pr.duration_ms, session_duration_ms=body.session_duration_ms,
         )
@@ -255,6 +256,7 @@ def clear_responses(sid: int, db: Session = Depends(get_db), _=Depends(get_curre
     survey = db.get(Survey, sid)
     if not survey:
         raise HTTPException(404, "Survey not found")
+    db.query(Response).filter(Response.survey_id == sid).delete()
     db.query(EvalSession).filter(EvalSession.survey_id == sid).delete()
     db.commit()
 
@@ -283,6 +285,7 @@ def list_responses(sid: int, db: Session = Depends(get_db), _=Depends(get_curren
     return [ResponseOut(
         id=r.id, session_num=r.session.num if r.session else None,
         pattern_id=r.pattern_id, pattern_title=r.pattern_title,
+        pattern_link=r.pattern_link or "",
         answers=r.answers, started_at=r.started_at, completed_at=r.completed_at,
         duration_ms=r.duration_ms, submitted_at=r.submitted_at,
     ) for r in rows]

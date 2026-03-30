@@ -17,7 +17,7 @@ def _rows(survey: Survey, responses: list[Response]):
         "response_id",
         "survey_id","survey_title",
         "session_id","session_num","evaluator_token",
-        "pattern_id","pattern_title",
+        "pattern_id","pattern_title","pattern_link",
         "started_at","completed_at","duration_ms","duration_human",
         "submitted_at","session_duration_ms","session_duration_human",
         *[f"q_{qid}" for qid in q_ids],
@@ -28,6 +28,17 @@ def _rows(survey: Survey, responses: list[Response]):
         s = v // 1000; m,s = divmod(s,60); h,m = divmod(m,60)
         return f"{h}h {m}m {s}s" if h else (f"{m}m {s}s" if m else f"{s}s")
 
+    # Build lookup: internal _id → full pattern dict (for scenario_id resolution)
+    pat_lookup = {p.get("_id"): p for p in survey.patterns}
+    sid_keys   = ["scenario_id", "Scenario_id", "ScenarioID", "scenarioid"]
+
+    def scenario_id(r):
+        pat = pat_lookup.get(r.pattern_id, {})
+        for k in sid_keys:
+            if k in pat and pat[k]:
+                return pat[k]
+        return r.pattern_id
+
     rows = []
     for r in responses:
         row = {
@@ -37,8 +48,9 @@ def _rows(survey: Survey, responses: list[Response]):
             "session_id":             r.session.id    if r.session else "",
             "session_num":            r.session.num   if r.session else "",
             "evaluator_token":        r.session.token if r.session else "",
-            "pattern_id":             r.pattern_id,
+            "pattern_id":             scenario_id(r),
             "pattern_title":          r.pattern_title,
+            "pattern_link":           r.pattern_link or "",
             "started_at":             r.started_at.isoformat()  if r.started_at  else "",
             "completed_at":           r.completed_at.isoformat() if r.completed_at else "",
             "duration_ms":            r.duration_ms or "",

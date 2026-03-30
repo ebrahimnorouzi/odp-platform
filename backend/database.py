@@ -6,7 +6,7 @@ import json, os, secrets
 from datetime import datetime
 from sqlalchemy import (
     create_engine, Column, Integer, String, Text,
-    DateTime, Boolean, ForeignKey, event
+    DateTime, Boolean, ForeignKey, event, text
 )
 from sqlalchemy.orm import DeclarativeBase, relationship, Session
 from sqlalchemy.pool import StaticPool
@@ -119,6 +119,7 @@ class Response(Base):
     session_id      = Column(Integer, ForeignKey("eval_sessions.id"), nullable=False)
     pattern_id      = Column(Integer, nullable=False)
     pattern_title   = Column(String(512), default="")
+    pattern_link    = Column(String(512), default="")
     _answers        = Column("answers", Text, default="{}")
     started_at      = Column(DateTime, nullable=True)
     completed_at    = Column(DateTime, nullable=True)
@@ -144,6 +145,15 @@ def get_db():
 def init_db():
     os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
     Base.metadata.create_all(bind=engine)
+    # Migrate: add columns introduced after initial schema
+    with engine.connect() as conn:
+        for stmt in [
+            "ALTER TABLE responses ADD COLUMN pattern_link VARCHAR(512) DEFAULT ''",
+        ]:
+            try:
+                conn.execute(text(stmt)); conn.commit()
+            except Exception:
+                pass  # column already exists
 
 
 def make_slug():
