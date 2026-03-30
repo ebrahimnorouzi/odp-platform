@@ -11,7 +11,7 @@ docs/site/
 node_modules/
 .venv/
 .claude/*
-author_2026-155-01.csv
+author_forms/*
 authors_questions.json
 expert_questions.json
 student_questions.json

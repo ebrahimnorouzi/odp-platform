@@ -1,4 +1,16 @@
 // ═══════════════════════════════════════════════════════
+//  Link label configuration — edit here to customise the
+//  text shown for each _link column on pattern cards.
+//  Keys are CSV column names; values are display strings.
+// ═══════════════════════════════════════════════════════
+const LINK_LABELS = {
+  'pdf_link':               '📄 Paper',
+  'ODPs links':             '🔗 ODP Wiki',
+  'CreativityTrack_link':   '📂 View Pattern (Creativity Track)',
+  'FunctionalityTrack_link':'📂 View Pattern (Functionality Track)',
+};
+
+// ═══════════════════════════════════════════════════════
 //  Evaluator — opens slug link, gets random patterns,
 //  fills form, submits directly to API
 // ═══════════════════════════════════════════════════════
@@ -137,9 +149,7 @@ const Evaluate = (() => {
       <div class="pattern-links">
         ${Object.keys(pat).filter(k => k.endsWith('_link') || k === 'ODPs links').map(k => {
           const v = pat[k]; if (!v) return '';
-          const name = k === 'pdf_link' ? '📄 Paper'
-                     : k === 'ODPs links' ? '🔗 ODP Wiki'
-                     : '🔗 ' + k.replace(/_link$/, '').replace(/_/g, ' ');
+          const name = LINK_LABELS[k] || ('🔗 ' + k.replace(/_link$/, '').replace(/_/g, ' '));
           return `<a class="pattern-link" href="${esc(v)}" target="_blank" rel="noopener">${name}</a>`;
         }).join('')}
       </div>`;
