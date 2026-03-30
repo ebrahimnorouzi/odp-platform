@@ -189,7 +189,8 @@ def start_session(slug: str, db: Session = Depends(get_db)):
     n_per = min(s.settings.get("n_per_evaluator", 3), s.pattern_count)
     assigned = random.sample(s.patterns, n_per)
 
-    keep = set(s.display_columns) | {"_id","title","year","pdf_link","ODPs links","Type","type"}
+    link_cols = {k for p in assigned for k in p if k.endswith('_link')}
+    keep = set(s.display_columns) | {"_id","title","year","pdf_link","ODPs links","Type","type"} | link_cols
     slim = [{k: p[k] for k in keep if k in p} for p in assigned]
 
     import secrets

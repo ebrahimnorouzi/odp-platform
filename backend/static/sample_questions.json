@@ -1,0 +1,69 @@
+[
+  {
+    "id": "q_author_role",
+    "label": "Author role",
+    "type": "select",
+    "required": true,
+    "help": "Your role in relation to the original pattern",
+    "options": ["Lead author", "Co-author"]
+  },
+  {
+    "id": "q_intent_match",
+    "label": "Intent match (1–5)",
+    "type": "likert",
+    "scale": 5,
+    "required": true,
+    "help": "Does the generated ODP model what the original pattern was designed to model? 1 = completely misses the intent, 5 = fully captures it",
+    "labels": ["Completely misses intent", "Fully captures intent"]
+  },
+  {
+    "id": "q_scope_appropriate",
+    "label": "Scope appropriate (1–5)",
+    "type": "likert",
+    "scale": 5,
+    "required": true,
+    "help": "Is the breadth of the generated ODP appropriate? 1 = far too broad or too narrow, 5 = exactly right + specify if broad or narrow",
+    "labels": ["Far too broad / too narrow", "Exactly right"]
+  },
+  {
+    "id": "q_reuse_readiness",
+    "label": "Reuse readiness (1–5)",
+    "type": "likert",
+    "scale": 5,
+    "required": true,
+    "help": "How ready is this draft for reuse without major modification? 1 = requires complete rework, 5 = usable as-is",
+    "labels": ["Requires complete rework", "Usable as-is"]
+  },
+  {
+    "id": "q_adoption_threshold",
+    "label": "Adoption threshold",
+    "type": "select",
+    "required": true,
+    "help": "Would you start from this draft rather than from scratch? Choose Yes / Maybe / No and add a brief justification in the next field.",
+    "options": ["Yes", "Maybe", "No"]
+  },
+  {
+    "id": "q_adoption_justification",
+    "label": "Adoption threshold — justification",
+    "type": "textarea",
+    "required": false,
+    "help": "Brief reason for your adoption choice above.",
+    "placeholder": "e.g. The core classes are correct but the property domains need adjustment."
+  },
+  {
+    "id": "q_time_saved",
+    "label": "Time saved vs from-scratch",
+    "type": "select",
+    "required": true,
+    "help": "If you had to produce a first-draft ODP for this scenario, how much time would this LLM draft save you?",
+    "options": ["0%", "1–25%", "26–50%", "51–75%", "76–100%"]
+  },
+  {
+    "id": "q_missing_elements",
+    "label": "Missing core elements",
+    "type": "textarea",
+    "required": false,
+    "help": "List any classes, properties, or axioms that are essential to the pattern but absent from the generated draft, or changes needed before this draft would be usable.",
+    "placeholder": "e.g. Missing subclass axioms, incorrect property domains, absent restrictions…"
+  }
+]

@@ -156,6 +156,20 @@ const Admin = (() => {
             </p>
           </div>
           <div class="form-group">
+            <label class="form-label">Questions JSON <span style="color:var(--text-muted)">(optional)</span></label>
+            <div style="display:flex;align-items:center;gap:10px">
+              <label class="btn btn-ghost btn-sm" style="cursor:pointer">
+                Browse…
+                <input name="questions_json" id="q-json-inp" type="file" accept=".json" style="display:none">
+              </label>
+              <span id="q-json-name" style="font-family:var(--mono);font-size:.72rem;color:var(--green)"></span>
+            </div>
+            <p class="mt-6" style="font-size:.75rem;color:var(--text-muted)">
+              Upload a JSON file to define custom questions instead of the defaults.
+              <a href="/sample_questions.json" download style="color:var(--cyan)">Download sample →</a>
+            </p>
+          </div>
+          <div class="form-group">
             <label class="form-label">Patterns per evaluator</label>
             <input name="n_per_evaluator" type="number" class="form-control" value="3" min="1" max="50" style="max-width:100px">
             <p class="mt-6" style="font-size:.75rem;color:var(--text-muted)">Each person gets this many randomly assigned patterns</p>
@@ -184,6 +198,7 @@ const Admin = (() => {
       inp.files=dt.files;$('#csv-name',ov).textContent='✓ '+e.dataTransfer.files[0].name;
     };
     inp.onchange=()=>$('#csv-name',ov).textContent='✓ '+(inp.files[0]?.name||'');
+    $('#q-json-inp',ov).onchange=e=>$('#q-json-name',ov).textContent=e.target.files[0]?'✓ '+e.target.files[0].name:'';
 
     $('#cf',ov).onsubmit=async e=>{
       e.preventDefault();

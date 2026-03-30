@@ -11,6 +11,7 @@ Surveys router — admin only (JWT required).
 """
 import csv, io, json, os
 from datetime import datetime
+from typing import Optional
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile
 from sqlalchemy.orm import Session
 
@@ -124,6 +125,7 @@ def create_survey(
     description:     str        = Form(""),
     n_per_evaluator: int        = Form(3),
     csv_file:        UploadFile = File(...),
+    questions_json:  Optional[UploadFile] = File(None),
     db:              Session    = Depends(get_db),
     _=Depends(get_current_admin),
 ):
@@ -132,10 +134,18 @@ def create_survey(
     if not patterns:
         raise HTTPException(400, "No valid patterns found — ensure rows have a non-empty Scenario column.")
 
+    questions = DEFAULT_QUESTIONS
+    if questions_json and questions_json.filename:
+        try:
+            qcontent = questions_json.file.read()
+            questions = json.loads(qcontent)
+        except Exception:
+            raise HTTPException(400, "Invalid questions JSON file.")
+
     s = Survey(title=title, description=description, csv_filename=csv_file.filename or "upload.csv")
     s.patterns        = patterns
     s.display_columns = auto_display_cols(headers)
-    s.questions       = DEFAULT_QUESTIONS
+    s.questions       = questions
     s.settings        = {"n_per_evaluator": min(n_per_evaluator, len(patterns)), "csv_headers": headers}
     db.add(s); db.commit(); db.refresh(s)
     return to_out(s, request)

@@ -135,14 +135,20 @@ const Evaluate = (() => {
         ${getf(pat,'Type')||getf(pat,'type')?`<span class="badge badge-violet">${esc(getf(pat,'Type')||getf(pat,'type'))}</span>`:''}
       </div>
       <div class="pattern-links">
-        ${getf(pat,'pdf_link')?`<a class="pattern-link" href="${esc(getf(pat,'pdf_link'))}" target="_blank" rel="noopener">📄 Paper</a>`:''}
-        ${getf(pat,'ODPs links')?`<a class="pattern-link" href="${esc(getf(pat,'ODPs links'))}" target="_blank" rel="noopener">🔗 ODP Wiki</a>`:''}
+        ${Object.keys(pat).filter(k => k.endsWith('_link') || k === 'ODPs links').map(k => {
+          const v = pat[k]; if (!v) return '';
+          const name = k === 'pdf_link' ? '📄 Paper'
+                     : k === 'ODPs links' ? '🔗 ODP Wiki'
+                     : '🔗 ' + k.replace(/_link$/, '').replace(/_/g, ' ');
+          return `<a class="pattern-link" href="${esc(v)}" target="_blank" rel="noopener">${name}</a>`;
+        }).join('')}
       </div>`;
     card.appendChild(hdr);
 
     // Body: content columns
     const body = el('div', { class:'pattern-card-body' });
     const skip = new Set(['title','Title','year','Year','pdf_link','ODPs links','_id','type','Type']);
+    Object.keys(pat).filter(k => k.endsWith('_link')).forEach(k => skip.add(k));
     Object.keys(pat).filter(k => !skip.has(k) && !k.startsWith('_') && pat[k]).forEach(col => {
       const blk = el('div', { class:`field-block ${/scenario/i.test(col)?'scenario':/cq|competency/i.test(col)?'cqs':''}` });
       blk.innerHTML = `<div class="field-block-label">${esc(col)}</div><div class="field-block-content">${esc(pat[col])}</div>`;
