@@ -440,18 +440,83 @@ const Admin = (() => {
   // ── Results & Statistics tab ────────────────────────────────────
   function renderResults(pane,sv,stats){
     pane.innerHTML=`
-      <div style="display:flex;gap:8px;margin-bottom:24px;flex-wrap:wrap">
+      <div style="display:flex;gap:8px;margin-bottom:24px;flex-wrap:wrap;align-items:center">
         <button class="btn btn-secondary btn-sm" onclick="API.surveys.exportCSV(${sv.id})">⬇ CSV</button>
         <button class="btn btn-secondary btn-sm" onclick="API.surveys.exportXLSX(${sv.id})">⬇ Excel</button>
         <button id="refresh-btn" class="btn btn-ghost btn-sm">↺ Refresh</button>
+        <span style="flex:1"></span>
+        <button id="clear-all-btn" class="btn btn-ghost btn-sm" style="color:var(--red);border-color:var(--red)">🗑 Clear All Responses</button>
       </div>
+      <div id="sessions-section"></div>
       <div id="stats-body"></div>`;
 
     $('#refresh-btn',pane).onclick=async()=>{
-      try{const s=await API.surveys.stats(sv.id);buildStats($('#stats-body',pane),sv,s);toast('Refreshed','success');}
-      catch(e){toast(e.message,'error');}
+      try{
+        const [s,sess]=await Promise.all([API.surveys.stats(sv.id),API.surveys.sessions(sv.id)]);
+        buildSessionsList($('#sessions-section',pane),sv,sess,pane);
+        buildStats($('#stats-body',pane),sv,s);
+        toast('Refreshed','success');
+      }catch(e){toast(e.message,'error');}
     };
+
+    $('#clear-all-btn',pane).onclick=async()=>{
+      if(!confirm(`Delete ALL responses and sessions for "${sv.title}"?\nThis cannot be undone.`)) return;
+      try{
+        await API.surveys.clearResponses(sv.id);
+        toast('All responses cleared','info');
+        const [s,sess]=await Promise.all([API.surveys.stats(sv.id),API.surveys.sessions(sv.id)]);
+        buildSessionsList($('#sessions-section',pane),sv,sess,pane);
+        buildStats($('#stats-body',pane),sv,s);
+      }catch(e){toast(e.message,'error');}
+    };
+
+    API.surveys.sessions(sv.id)
+      .then(sess=>buildSessionsList($('#sessions-section',pane),sv,sess,pane))
+      .catch(()=>{});
     buildStats($('#stats-body',pane),sv,stats);
+  }
+
+  function buildSessionsList(container,sv,sessions,pane){
+    if(!sessions||!sessions.length){ container.innerHTML=''; return; }
+    let h=`
+      <div class="section-label mb-12"><span class="section-label-text">Sessions (${sessions.length})</span></div>
+      <div class="card mb-24" style="padding:0;overflow:hidden">
+        <table class="data-table" style="margin:0">
+          <thead><tr>
+            <th>#</th><th>Opened</th><th>Submitted</th><th>Status</th><th>Responses</th><th></th>
+          </tr></thead>
+          <tbody>`;
+    sessions.forEach(s=>{
+      const opened=s.opened_at?new Date(s.opened_at).toLocaleString():'—';
+      const submitted=s.submitted_at?new Date(s.submitted_at).toLocaleString():'—';
+      const status=s.is_completed
+        ?'<span class="badge badge-green">completed</span>'
+        :'<span class="badge badge-muted">incomplete</span>';
+      h+=`<tr>
+        <td style="font-family:var(--mono)">#${s.num}</td>
+        <td style="font-size:.8rem">${opened}</td>
+        <td style="font-size:.8rem">${submitted}</td>
+        <td>${status}</td>
+        <td style="font-family:var(--mono)">${s.n_responses}</td>
+        <td><button class="btn btn-ghost btn-sm sess-del" data-num="${s.num}"
+          style="color:var(--red);padding:2px 8px">✕ Remove</button></td>
+      </tr>`;
+    });
+    h+=`</tbody></table></div>`;
+    container.innerHTML=h;
+    container.querySelectorAll('.sess-del').forEach(btn=>{
+      btn.onclick=async()=>{
+        const snum=+btn.dataset.num;
+        if(!confirm(`Remove session #${snum} and all its responses?`)) return;
+        try{
+          await API.surveys.deleteSession(sv.id,snum);
+          toast(`Session #${snum} removed`,'info');
+          const [s,sess]=await Promise.all([API.surveys.stats(sv.id),API.surveys.sessions(sv.id)]);
+          buildSessionsList(container,sv,sess,pane);
+          buildStats($('#stats-body',pane),sv,s);
+        }catch(e){toast(e.message,'error');}
+      };
+    });
   }
 
   function buildStats(container,sv,stats){

@@ -235,6 +235,30 @@ def submit_responses(body: SubmitResponses, db: Session = Depends(get_db)):
     return {"status": "ok", "saved": len(body.responses)}
 
 
+# ── Admin: delete session ─────────────────────────────────────────────────
+
+@router.delete("/api/surveys/{sid}/sessions/{snum}", status_code=204)
+def delete_session(sid: int, snum: int, db: Session = Depends(get_db), _=Depends(get_current_admin)):
+    session = db.query(EvalSession).filter(
+        EvalSession.survey_id == sid, EvalSession.num == snum
+    ).first()
+    if not session:
+        raise HTTPException(404, "Session not found")
+    db.delete(session)   # cascade deletes its responses
+    db.commit()
+
+
+# ── Admin: clear all responses ────────────────────────────────────────────
+
+@router.delete("/api/surveys/{sid}/responses", status_code=204)
+def clear_responses(sid: int, db: Session = Depends(get_db), _=Depends(get_current_admin)):
+    survey = db.get(Survey, sid)
+    if not survey:
+        raise HTTPException(404, "Survey not found")
+    db.query(EvalSession).filter(EvalSession.survey_id == sid).delete()
+    db.commit()
+
+
 # ── Admin: sessions ───────────────────────────────────────────────────────
 
 @router.get("/api/surveys/{sid}/sessions")

@@ -62,9 +62,11 @@ const API = (() => {
     publish:    id      => post(`/api/surveys/${id}/publish`, {}),
     unpublish:  id      => post(`/api/surveys/${id}/unpublish`, {}),
     delete:     id      => del(`/api/surveys/${id}`),
-    responses:  id      => get(`/api/surveys/${id}/responses`),
-    sessions:   id      => get(`/api/surveys/${id}/sessions`),
-    stats:      id      => get(`/api/surveys/${id}/stats`),
+    responses:      id          => get(`/api/surveys/${id}/responses`),
+    sessions:       id          => get(`/api/surveys/${id}/sessions`),
+    stats:          id          => get(`/api/surveys/${id}/stats`),
+    clearResponses: id          => del(`/api/surveys/${id}/responses`),
+    deleteSession:  (id, snum)  => del(`/api/surveys/${id}/sessions/${snum}`),
     exportCSV:  id => get(`/api/surveys/${id}/export/csv`).then(blob => {
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
