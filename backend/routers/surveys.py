@@ -96,6 +96,8 @@ def to_out(s: Survey, req: Request | None = None) -> SurveyOut:
         response_count=s.response_count, completed_count=s.completed_count,
         display_columns=s.display_columns, questions=s.questions,
         settings=s.settings,
+        question_sets=s.question_sets,
+        pattern_question_map=s.pattern_question_map,
     )
 
 
@@ -146,6 +148,7 @@ def create_survey(
     s.patterns        = patterns
     s.display_columns = auto_display_cols(headers)
     s.questions       = questions
+    s.question_sets   = {"default": questions}
     s.settings        = {"n_per_evaluator": min(n_per_evaluator, len(patterns)), "csv_headers": headers}
     db.add(s); db.commit(); db.refresh(s)
     return to_out(s, request)
@@ -166,6 +169,12 @@ def update_survey(
     if body.questions       is not None: s.questions       = [q.model_dump() for q in body.questions]
     if body.n_per_evaluator is not None:
         cfg = s.settings; cfg["n_per_evaluator"] = min(body.n_per_evaluator, s.pattern_count); s.settings = cfg
+    if body.question_sets is not None:
+        s.question_sets = body.question_sets
+        if "default" in body.question_sets:
+            s.questions = body.question_sets["default"]
+    if body.pattern_question_map is not None:
+        s.pattern_question_map = body.pattern_question_map
     s.updated_at = datetime.utcnow()
     db.commit(); db.refresh(s)
     return to_out(s, request)

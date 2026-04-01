@@ -45,10 +45,12 @@ class Survey(Base):
     updated_at   = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     published_at = Column(DateTime, nullable=True)
 
-    _patterns        = Column("patterns",        Text, default="[]")
-    _questions       = Column("questions",        Text, default="[]")
-    _display_columns = Column("display_columns",  Text, default="[]")
-    _settings        = Column("settings",         Text, default="{}")
+    _patterns             = Column("patterns",             Text, default="[]")
+    _questions            = Column("questions",            Text, default="[]")
+    _display_columns      = Column("display_columns",      Text, default="[]")
+    _settings             = Column("settings",             Text, default="{}")
+    _question_sets        = Column("question_sets",        Text, default="{}")
+    _pattern_question_map = Column("pattern_question_map", Text, default="{}")
 
     sessions  = relationship("EvalSession",  back_populates="survey", cascade="all, delete-orphan")
     responses = relationship("Response",     back_populates="survey", cascade="all, delete-orphan")
@@ -72,6 +74,16 @@ class Survey(Base):
     def settings(self):        return _ld(self._settings)
     @settings.setter
     def settings(self, v):     self._settings = _j(v)
+
+    @property
+    def question_sets(self):       return _ld(self._question_sets)
+    @question_sets.setter
+    def question_sets(self, v):    self._question_sets = _j(v)
+
+    @property
+    def pattern_question_map(self):      return _ld(self._pattern_question_map)
+    @pattern_question_map.setter
+    def pattern_question_map(self, v):   self._pattern_question_map = _j(v)
 
     @property
     def is_published(self):    return self.status == "published"
@@ -149,6 +161,8 @@ def init_db():
     with engine.connect() as conn:
         for stmt in [
             "ALTER TABLE responses ADD COLUMN pattern_link VARCHAR(512) DEFAULT ''",
+            "ALTER TABLE surveys ADD COLUMN question_sets TEXT DEFAULT '{}'",
+            "ALTER TABLE surveys ADD COLUMN pattern_question_map TEXT DEFAULT '{}'",
         ]:
             try:
                 conn.execute(text(stmt)); conn.commit()

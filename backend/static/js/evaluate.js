@@ -144,10 +144,11 @@ const Evaluate = (() => {
 
   // ── Render pattern + questions ─────────────────────────────────
   function showPattern(idx) {
-    const { patterns, questions } = state.payload;
+    const { patterns } = state.payload;
     if (idx >= patterns.length) { submitAll(); return; }
 
     const pat  = patterns[idx];
+    const questions = pat._questions || state.payload.questions;
     const resp = state.responses[idx];
     if (!resp.started_at) resp.started_at = now();
     state.patternStart = Date.now();
@@ -284,7 +285,8 @@ const Evaluate = (() => {
   function saveGo(next) {
     const idx  = state.current;
     const resp = state.responses[idx];
-    const qs   = state.payload.questions;
+    const pat  = state.payload.patterns[idx];
+    const qs   = pat._questions || state.payload.questions;
     let ok = true;
     qs.forEach(q => {
       const errEl = document.getElementById(`err-p${idx}_${q.id}`);

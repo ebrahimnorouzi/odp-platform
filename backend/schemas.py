@@ -25,11 +25,13 @@ class SurveyCreate(BaseModel):
     n_per_evaluator: int  = Field(3, ge=1, le=200)
 
 class SurveyUpdate(BaseModel):
-    title:           Optional[str]            = None
-    description:     Optional[str]            = None
-    display_columns: Optional[list[str]]      = None
-    questions:       Optional[list[Question]] = None
-    n_per_evaluator: Optional[int]            = None
+    title:                Optional[str]            = None
+    description:          Optional[str]            = None
+    display_columns:      Optional[list[str]]      = None
+    questions:            Optional[list[Question]] = None
+    n_per_evaluator:      Optional[int]            = None
+    question_sets:        Optional[dict]           = None
+    pattern_question_map: Optional[dict]           = None
 
 class SurveyOut(BaseModel):
     id:              int
@@ -46,9 +48,11 @@ class SurveyOut(BaseModel):
     session_count:   int
     response_count:  int
     completed_count: int
-    display_columns: list[str]
-    questions:       list[dict]
-    settings:        dict[str, Any]
+    display_columns:      list[str]
+    questions:            list[dict]
+    settings:             dict[str, Any]
+    question_sets:        dict         = {}
+    pattern_question_map: dict         = {}
     model_config = {"from_attributes": True}
 
 class SurveyDetail(SurveyOut):

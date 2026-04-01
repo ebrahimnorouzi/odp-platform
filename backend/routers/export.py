@@ -10,9 +10,21 @@ from auth import get_current_admin
 router = APIRouter(prefix="/api/surveys", tags=["export"])
 
 
+def _all_q_ids(survey: Survey) -> list[str]:
+    """Collect unique question IDs across all named question sets."""
+    seen, ids = set(), []
+    all_sets = list(survey.question_sets.values()) if survey.question_sets else []
+    all_sets.append(survey.questions)   # always include default
+    for qs in all_sets:
+        for q in (qs or []):
+            qid = q.get("id")
+            if qid and qid not in seen:
+                seen.add(qid); ids.append(qid)
+    return ids
+
+
 def _rows(survey: Survey, responses: list[Response]):
-    qs       = survey.questions
-    q_ids    = [q["id"] for q in qs]
+    q_ids    = _all_q_ids(survey)
     headers  = [
         "response_id",
         "survey_id","survey_title",
@@ -98,9 +110,14 @@ def export_excel(sid: int, db: Session = Depends(get_db), _=Depends(get_current_
     headers, rows = _rows(survey, responses)
 
     df = pd.DataFrame(rows, columns=headers)
-    qs = survey.questions
+    # Aggregate questions from all sets for the summary sheet
+    seen_ids, all_qs = set(), []
+    for qs_list in (list(survey.question_sets.values()) if survey.question_sets else []) + [survey.questions]:
+        for q in (qs_list or []):
+            if q.get("id") not in seen_ids:
+                seen_ids.add(q["id"]); all_qs.append(q)
     summary = []
-    for q in qs:
+    for q in all_qs:
         col  = f"q_{q['id']}"
         vals = pd.to_numeric(df[col], errors="coerce").dropna() if col in df else pd.Series([], dtype=float)
         summary.append({

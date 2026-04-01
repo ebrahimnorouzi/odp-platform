@@ -377,25 +377,215 @@ const Admin = (() => {
   }
 
   // ── Questions tab ──────────────────────────────────────────────
-  function renderQuestions(pane,sv){
-    const qs=JSON.parse(JSON.stringify(sv.questions));
-    pane.innerHTML=`
-      <div class="card">
-        <div class="card-title mb-4">Evaluation Questions</div>
-        <p class="mb-20" style="font-size:.85rem">Shown for every pattern. Save when done.</p>
-        <div id="q-list"></div>
-        <button id="add-q" class="btn btn-ghost w-full mt-12">＋ Add Question</button>
-        <div style="display:flex;justify-content:flex-end;margin-top:20px">
-          <button id="save-q" class="btn btn-primary">Save Questions</button>
+  function renderQuestions(pane, sv) {
+    // Working copies — initialise from question_sets or fall back to questions
+    const qSets = JSON.parse(JSON.stringify(
+      (sv.question_sets && Object.keys(sv.question_sets).length)
+        ? sv.question_sets
+        : { default: sv.questions || [] }
+    ));
+    const pMap = JSON.parse(JSON.stringify(sv.pattern_question_map || {}));
+    let activeSet = 'default';
+
+    function render() {
+      const setNames = Object.keys(qSets);
+      const qs       = qSets[activeSet] || [];
+
+      pane.innerHTML = `
+        <div class="card mb-16">
+          <div class="card-title mb-4">Question Sets</div>
+          <p class="mb-16" style="font-size:.85rem">
+            Define different question templates. Patterns not assigned to a set use <strong>default</strong>.
+          </p>
+          <div id="qs-tabs" style="display:flex;gap:4px;border-bottom:1px solid var(--border);margin-bottom:16px;flex-wrap:wrap"></div>
+          <div id="qs-editor"></div>
+          <div style="border-top:1px solid var(--border);padding-top:16px;margin-top:16px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+            <span style="font-size:.8rem;color:var(--text-muted)">New set:</span>
+            <input id="new-set-nm" class="form-control" placeholder="e.g. author" style="max-width:150px;height:32px;font-size:.82rem">
+            <label class="btn btn-ghost btn-sm" style="cursor:pointer">
+              Browse JSON<input type="file" id="new-set-json" accept=".json" style="display:none">
+            </label>
+            <button id="add-set-btn" class="btn btn-ghost btn-sm">＋ Add Set</button>
+          </div>
         </div>
-      </div>`;
-    const renderAll=()=>{const l=$('#q-list',pane);l.innerHTML='';qs.forEach((q,i)=>buildQItem(l,q,i,qs,renderAll));};
-    renderAll();
-    $('#add-q',pane).onclick=()=>{qs.push({id:randomId('q'),type:'text',label:'New Question',help:'',required:false});renderAll();};
-    $('#save-q',pane).onclick=async()=>{
-      try{await API.surveys.update(sv.id,{questions:qs});sv.questions=qs;toast('Questions saved','success');}
-      catch(e){toast(e.message,'error');}
-    };
+        <div class="card">
+          <div class="card-title mb-4">Pattern → Question Set</div>
+          <p class="mb-12" style="font-size:.85rem">
+            Assign each pattern to a question set. Unassigned patterns use <strong>default</strong>.
+          </p>
+          <div id="pmap-wrap"></div>
+          <div style="display:flex;justify-content:flex-end;margin-top:16px">
+            <button id="save-pmap" class="btn btn-primary btn-sm">Save Assignments</button>
+          </div>
+        </div>`;
+
+      // ── Set tabs ────────────────────────────────────────────
+      const tabsEl = $('#qs-tabs', pane);
+      setNames.forEach(name => {
+        const isActive = name === activeSet;
+        const btn = el('button', {
+          class: 'btn btn-ghost btn-sm',
+          style: `border-radius:6px 6px 0 0;border-bottom:2px solid ${isActive?'var(--amber)':'transparent'};color:${isActive?'var(--amber)':''}`
+        }, name === 'default' ? 'Default' : name);
+        btn.onclick = () => { activeSet = name; render(); };
+        tabsEl.appendChild(btn);
+      });
+
+      // ── Editor for active set ────────────────────────────────
+      const edEl = $('#qs-editor', pane);
+      edEl.innerHTML = `
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px">
+          <span class="label">Editing: <strong>${esc(activeSet === 'default' ? 'Default' : activeSet)}</strong> — ${qs.length} question(s)</span>
+          <div style="display:flex;gap:6px;flex-wrap:wrap">
+            ${activeSet !== 'default' ? `<button id="del-set-btn" class="btn btn-ghost btn-sm" style="color:var(--red)">Delete Set</button>` : ''}
+            <label class="btn btn-ghost btn-sm" style="cursor:pointer">
+              Replace with JSON<input type="file" id="repl-json" accept=".json" style="display:none">
+            </label>
+            <button id="save-qs-btn" class="btn btn-primary btn-sm">Save Set</button>
+          </div>
+        </div>
+        <div id="q-list"></div>
+        <button id="add-q-btn" class="btn btn-ghost w-full mt-12">＋ Add Question</button>`;
+
+      const renderQList = () => {
+        const l = $('#q-list', pane); l.innerHTML = '';
+        qs.forEach((q, i) => buildQItem(l, q, i, qs, renderQList));
+      };
+      renderQList();
+
+      $('#add-q-btn', pane).onclick = () => {
+        qs.push({ id: randomId('q'), type: 'text', label: 'New Question', help: '', required: false });
+        renderQList();
+      };
+
+      $('#save-qs-btn', pane).onclick = async () => {
+        try {
+          qSets[activeSet] = qs;
+          const payload = { question_sets: { ...qSets } };
+          if (activeSet === 'default') payload.questions = qs;
+          const updated = await API.surveys.update(sv.id, payload);
+          sv.question_sets = updated.question_sets;
+          if (activeSet === 'default') sv.questions = qs;
+          toast('Question set saved', 'success');
+        } catch(e) { toast(e.message, 'error'); }
+      };
+
+      $('#repl-json', pane)?.addEventListener('change', async e => {
+        const file = e.target.files[0]; if (!file) return;
+        try {
+          const text = await Utils.readFileAsText(file);
+          const parsed = JSON.parse(text);
+          if (!Array.isArray(parsed)) throw new Error('JSON must be an array of questions');
+          qs.splice(0, qs.length, ...parsed);
+          renderQList();
+          toast(`Loaded ${parsed.length} questions from ${file.name}`, 'success');
+        } catch(e) { toast('Invalid JSON: ' + e.message, 'error'); }
+      });
+
+      $('#del-set-btn', pane)?.addEventListener('click', async () => {
+        const setName = activeSet;
+        if (!confirm(`Delete question set "${setName}"?\nPatterns assigned to it will fall back to "default".`)) return;
+        Object.keys(pMap).forEach(k => { if (pMap[k] === setName) delete pMap[k]; });
+        delete qSets[setName];
+        activeSet = 'default';
+        try {
+          await API.surveys.update(sv.id, { question_sets: { ...qSets }, pattern_question_map: { ...pMap } });
+          sv.question_sets = { ...qSets }; sv.pattern_question_map = { ...pMap };
+          toast(`Set "${setName}" deleted`, 'info');
+        } catch(e) { toast(e.message, 'error'); }
+        render();
+      });
+
+      // ── Add set ─────────────────────────────────────────────
+      $('#add-set-btn', pane).onclick = async () => {
+        const nm = ($('#new-set-nm', pane).value || '').trim().toLowerCase().replace(/\s+/g, '_');
+        if (!nm) { toast('Enter a set name', 'error'); return; }
+        if (qSets[nm]) { toast(`Set "${nm}" already exists`, 'error'); return; }
+        const jsonFile = $('#new-set-json', pane).files[0];
+        let newQs = [];
+        if (jsonFile) {
+          try {
+            const parsed = JSON.parse(await Utils.readFileAsText(jsonFile));
+            if (!Array.isArray(parsed)) throw new Error('JSON must be an array');
+            newQs = parsed;
+          } catch(e) { toast('Invalid JSON: ' + e.message, 'error'); return; }
+        } else {
+          newQs = JSON.parse(JSON.stringify(qSets['default'] || []));
+        }
+        qSets[nm] = newQs;
+        activeSet = nm;
+        try {
+          const updated = await API.surveys.update(sv.id, { question_sets: { ...qSets } });
+          sv.question_sets = updated.question_sets;
+          toast(`Set "${nm}" created`, 'success');
+        } catch(e) { toast(e.message, 'error'); }
+        render();
+      };
+
+      // ── Pattern → set mapping table ──────────────────────────
+      const patterns = sv.patterns || [];
+      const patKey   = p => { for (const k of ['scenario_id','Scenario_id','ScenarioID']) if (p[k]) return String(p[k]); return String(p._id ?? ''); };
+      const wrap     = $('#pmap-wrap', pane);
+
+      if (!patterns.length) {
+        wrap.innerHTML = '<p style="color:var(--text-muted);font-size:.85rem">No patterns loaded.</p>';
+      } else {
+        wrap.innerHTML = `
+          <input id="pmap-search" class="form-control mb-12" placeholder="Filter by ID or title…" style="max-width:320px">
+          <div style="max-height:380px;overflow-y:auto;border:1px solid var(--border);border-radius:8px">
+            <table class="data-table" style="margin:0;width:100%">
+              <thead><tr>
+                <th style="width:130px">Scenario ID</th><th>Title</th><th style="width:160px">Question Set</th>
+              </tr></thead>
+              <tbody id="pmap-body"></tbody>
+            </table>
+          </div>`;
+
+        // Prefix-matching fallback: "2023-133" matches "2023-133-01" and vice versa
+      const resolveSet = key => {
+        if (key in pMap) return pMap[key];
+        const found = Object.entries(pMap).find(([k]) => key.startsWith(k + '-') || k.startsWith(key + '-'));
+        return found ? found[1] : 'default';
+      };
+
+      const renderPMap = (filter = '') => {
+          const fl = filter.toLowerCase();
+          const body = $('#pmap-body', pane); body.innerHTML = '';
+          patterns
+            .filter(p => !fl || (p.title||'').toLowerCase().includes(fl) || patKey(p).toLowerCase().includes(fl))
+            .forEach(p => {
+              const key = patKey(p);
+              const cur = resolveSet(key);
+              const tr = el('tr');
+              tr.innerHTML = `
+                <td style="font-family:var(--mono);font-size:.75rem;color:var(--cyan)">${esc(key)}</td>
+                <td style="font-size:.82rem">${esc(p.title || '')}</td>
+                <td>
+                  <select class="form-control pmap-sel" style="font-size:.8rem;height:28px;padding:2px 8px">
+                    ${Object.keys(qSets).map(n => `<option value="${n}" ${cur===n?'selected':''}>${n==='default'?'Default':n}</option>`).join('')}
+                  </select>
+                </td>`;
+              body.appendChild(tr);
+              tr.querySelector('.pmap-sel').onchange = e => {
+                if (e.target.value === 'default') delete pMap[key];
+                else pMap[key] = e.target.value;
+              };
+            });
+        };
+        renderPMap();
+        $('#pmap-search', pane).oninput = e => renderPMap(e.target.value);
+      }
+
+      $('#save-pmap', pane).onclick = async () => {
+        try {
+          await API.surveys.update(sv.id, { pattern_question_map: { ...pMap } });
+          sv.pattern_question_map = { ...pMap };
+          toast('Assignments saved', 'success');
+        } catch(e) { toast(e.message, 'error'); }
+      };
+    }
+
+    render();
   }
 
   function buildQItem(list,q,idx,qs,refresh){

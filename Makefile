@@ -1,100 +1,119 @@
-.PHONY: up down build restart logs shell-backend db-shell reset-db test-api help
+.PHONY: build up down restart logs logs-backend status shell-backend db-shell db-tables reset-db backup seed test-api help
 
-# ─── Main commands ───────────────────────────────────────────────
+IMAGE   = odp-platform
+CONTAINER = odp-backend
+PORT    ?= 8080
 
-up:         ## Start all services
+# Load .env values if the file exists (for ADMIN_PASSWORD etc.)
+-include .env
+export
+
+# ─── Core ────────────────────────────────────────────────────────
+
+build:          ## Build the Docker image (run once, then again only if requirements.txt changes)
+	docker build -t $(IMAGE) ./backend
+
+up:             ## Create and start the container (bind-mounts ./backend for live edits)
 	@cp -n .env.example .env 2>/dev/null || true
-	docker compose up -d
+	@docker rm -f $(CONTAINER) 2>/dev/null || true
+	docker run -d \
+	  --name $(CONTAINER) \
+	  -p $(PORT):8080 \
+	  -v "$(CURDIR)/backend:/app" \
+	  -v odp_data:/data \
+	  --env-file .env \
+	  $(IMAGE) \
+	  uvicorn main:app --host 0.0.0.0 --port 8080 --reload
 	@echo ""
-	@echo "  ✓ Platform running at http://localhost:$$(grep PORT .env | cut -d= -f2 | tr -d ' ' || echo 8080)"
-	@echo "  ✓ API docs:        http://localhost:$$(grep PORT .env | cut -d= -f2 | tr -d ' ' || echo 8080)/api/docs"
-	@echo "  ✓ Documentation:   http://localhost:$$(grep PORT .env | cut -d= -f2 | tr -d ' ' || echo 8080)/docs/"
+	@echo "  Platform running at http://localhost:$(PORT)"
+	@echo "  API docs:          http://localhost:$(PORT)/api/docs"
+	@echo "  Edits to ./backend are live immediately (no restart needed)"
 	@echo ""
 
-down:       ## Stop all services
-	docker compose down
+down:           ## Stop the container
+	docker stop $(CONTAINER)
 
-build:      ## Rebuild all images (no cache)
-	docker compose build --no-cache
+restart:        ## Restart the container
+	docker restart $(CONTAINER)
 
-restart:    ## Restart all services
-	docker compose restart
+logs:           ## Follow container logs
+	docker logs -f $(CONTAINER)
 
-logs:       ## Follow logs from all services
-	docker compose logs -f
+logs-backend:   ## Alias for logs
+	docker logs -f $(CONTAINER)
 
-logs-backend: ## Follow backend logs only
-	docker compose logs -f backend
-
-status:     ## Show service health
-	docker compose ps
+status:         ## Show container status
+	docker ps --filter name=$(CONTAINER) --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
 
 # ─── Development ─────────────────────────────────────────────────
 
-shell-backend: ## Open a shell in the backend container
-	docker compose exec backend /bin/bash
+shell-backend:  ## Open a shell inside the container
+	docker exec -it $(CONTAINER) /bin/bash
 
-db-shell:   ## Open SQLite shell on the database
-	docker compose exec backend python3 -c \
+db-shell:       ## Query the database
+	docker exec $(CONTAINER) python3 -c \
 		"from database import engine; import sqlalchemy; \
 		 conn = engine.connect(); \
-		 [print(r) for r in conn.execute(sqlalchemy.text('SELECT * FROM surveys')).fetchall()]"
+		 [print(r) for r in conn.execute(sqlalchemy.text('SELECT id,title,status,pattern_count,response_count FROM surveys')).fetchall()]"
 
-db-tables:  ## List database tables and row counts
-	docker compose exec backend python3 -c "
+db-tables:      ## Show row counts per table
+	docker exec $(CONTAINER) python3 -c "
 from database import engine
 import sqlalchemy
 with engine.connect() as c:
-    tables = ['surveys','evaluator_links','responses']
-    for t in tables:
-        n = c.execute(sqlalchemy.text(f'SELECT COUNT(*) FROM {t}')).scalar()
-        print(f'  {t}: {n} rows')
+    for t in ['surveys','eval_sessions','responses']:
+        try:
+            n = c.execute(sqlalchemy.text(f'SELECT COUNT(*) FROM {t}')).scalar()
+            print(f'  {t}: {n} rows')
+        except: pass
 "
 
-reset-db:   ## ⚠ Delete the database and restart (loses all data!)
-	@echo "WARNING: This will delete ALL survey data. Press Ctrl+C to cancel..."
+reset-db:       ## ⚠ Delete the database volume and restart (loses all data!)
+	@echo "WARNING: This will delete ALL data. Press Ctrl+C to cancel..."
 	@sleep 5
-	docker compose down -v
-	docker compose up -d
-
-# ─── Testing ─────────────────────────────────────────────────────
-
-test-api:   ## Quick API smoke test (requires curl + jq)
-	@echo "Testing API health..."
-	@curl -sf http://localhost:8080/api/health | python3 -m json.tool
-	@echo ""
-	@echo "Testing auth..."
-	@TOKEN=$$(curl -sf -X POST http://localhost:8080/api/auth/token \
-		-H "Content-Type: application/json" \
-		-d '{"password":"admin123"}' | python3 -c "import sys,json; print(json.load(sys.stdin)['access_token'])") && \
-		echo "Token obtained: $${TOKEN:0:20}..." && \
-		curl -sf http://localhost:8080/api/surveys \
-		  -H "Authorization: Bearer $$TOKEN" | python3 -m json.tool | head -20
+	docker stop $(CONTAINER) 2>/dev/null || true
+	docker rm   $(CONTAINER) 2>/dev/null || true
+	docker volume rm odp_data 2>/dev/null || true
+	$(MAKE) up
 
 # ─── Backup ──────────────────────────────────────────────────────
 
-backup:     ## Backup the database to ./backups/
+backup:         ## Backup the database to ./backups/
 	@mkdir -p backups
-	@docker compose exec backend cp /data/odp_eval.db /data/odp_eval_backup.db
-	@docker cp odp-backend:/data/odp_eval_backup.db backups/odp_eval_$$(date +%Y%m%d_%H%M%S).db
+	@docker exec $(CONTAINER) cp /data/odp_eval.db /data/odp_eval_backup.db
+	@docker cp $(CONTAINER):/data/odp_eval_backup.db backups/odp_eval_$$(date +%Y%m%d_%H%M%S).db
 	@echo "Database backed up to ./backups/"
 
 # ─── Sample data ─────────────────────────────────────────────────
 
-seed:       ## Create a sample survey with the included sample.csv
+seed:           ## Create a sample survey with sample.csv
 	@echo "Creating sample survey..."
-	@TOKEN=$$(curl -sf -X POST http://localhost:8080/api/auth/token \
+	@TOKEN=$$(curl -sf -X POST http://localhost:$(PORT)/api/auth/token \
 		-H "Content-Type: application/json" \
-		-d "{\"password\":\"$$(grep ADMIN_PASSWORD .env | cut -d= -f2 | tr -d ' ')\"}" \
+		-d "{\"password\":\"$${ADMIN_PASSWORD:-admin123}\"}" \
 		| python3 -c "import sys,json; print(json.load(sys.stdin)['access_token'])") && \
-		curl -sf -X POST http://localhost:8080/api/surveys \
+		curl -sf -X POST http://localhost:$(PORT)/api/surveys \
 		  -H "Authorization: Bearer $$TOKEN" \
 		  -F "title=WOP 2023 ODP Evaluation" \
-		  -F "description=Sample evaluation survey using WOP 2023 patterns" \
+		  -F "description=Sample evaluation survey" \
 		  -F "n_per_evaluator=3" \
-		  -F "n_evaluators=5" \
 		  -F "csv_file=@sample.csv" | python3 -m json.tool
 
-help:       ## Show this help
+# ─── Testing ─────────────────────────────────────────────────────
+
+test-api:       ## Quick API smoke test
+	@echo "Testing health..."
+	@curl -sf http://localhost:$(PORT)/api/health | python3 -m json.tool
+	@echo ""
+	@echo "Testing auth..."
+	@TOKEN=$$(curl -sf -X POST http://localhost:$(PORT)/api/auth/token \
+		-H "Content-Type: application/json" \
+		-d "{\"password\":\"$${ADMIN_PASSWORD:-admin123}\"}" \
+		| python3 -c "import sys,json; print(json.load(sys.stdin)['access_token'])") && \
+		echo "Token: $${TOKEN:0:20}..." && \
+		curl -sf http://localhost:$(PORT)/api/surveys \
+		  -H "Authorization: Bearer $$TOKEN" | python3 -m json.tool | head -20
+
+help:           ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | \
 		awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-20s\033[0m %s\n", $$1, $$2}'

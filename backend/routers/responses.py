@@ -193,6 +193,24 @@ def start_session(slug: str, db: Session = Depends(get_db)):
     keep = set(s.display_columns) | {"_id","title","year","pdf_link","ODPs links","Type","type"} | link_cols
     slim = [{k: p[k] for k in keep if k in p} for p in assigned]
 
+    # Attach per-pattern question set
+    pmap   = s.pattern_question_map   # {"2023-133-01": "author", ...}
+    qsets  = s.question_sets          # {"default": [...], "author": [...]}
+
+    def _resolve_set(key: str) -> str:
+        """Exact match first, then prefix match (handles trailing -XX variants)."""
+        if key in pmap:
+            return pmap[key]
+        for mk, mv in pmap.items():
+            if key.startswith(mk + '-') or mk.startswith(key + '-'):
+                return mv
+        return "default"
+
+    for pat_slim, pat_full in zip(slim, assigned):
+        sid_val  = next((str(pat_full[k]) for k in ("scenario_id","Scenario_id","ScenarioID") if pat_full.get(k)), str(pat_full.get("_id","")))
+        set_name = _resolve_set(sid_val)
+        pat_slim["_questions"] = qsets.get(set_name) or s.questions
+
     import secrets
     from sqlalchemy import func
     max_num = db.query(func.max(EvalSession.num)).filter(EvalSession.survey_id == s.id).scalar() or 0
