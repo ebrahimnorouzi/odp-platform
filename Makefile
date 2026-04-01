@@ -1,4 +1,4 @@
-.PHONY: build up down restart logs logs-backend status shell-backend db-shell db-tables reset-db backup seed test-api help
+.PHONY: build up up-prod down restart logs logs-backend status shell-backend db-shell db-tables reset-db backup seed test-api help
 
 IMAGE   = odp-platform
 CONTAINER = odp-backend
@@ -28,6 +28,21 @@ up:             ## Create and start the container (bind-mounts ./backend for liv
 	@echo "  Platform running at http://localhost:$(PORT)"
 	@echo "  API docs:          http://localhost:$(PORT)/api/docs"
 	@echo "  Edits to ./backend are live immediately (no restart needed)"
+	@echo ""
+
+up-prod:        ## Start in production mode (no bind-mount, no --reload, auto-restart)
+	@cp -n .env.example .env 2>/dev/null || true
+	@docker rm -f $(CONTAINER) 2>/dev/null || true
+	docker run -d \
+	  --name $(CONTAINER) \
+	  --restart unless-stopped \
+	  -p $(PORT):8080 \
+	  -v odp_data:/data \
+	  --env-file .env \
+	  $(IMAGE) \
+	  uvicorn main:app --host 0.0.0.0 --port 8080 --workers 2
+	@echo ""
+	@echo "  Platform running at http://localhost:$(PORT)  [production mode]"
 	@echo ""
 
 down:           ## Stop the container

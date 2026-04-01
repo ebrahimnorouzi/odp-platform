@@ -146,12 +146,34 @@ q_<id>  × all questions across all sets
 
 ---
 
-## Production checklist
+## Production
+
+Use `make up-prod` instead of `make up`, or run:
+
+```bash
+docker build -t odp-platform ./backend   # build with latest code
+
+docker run -d \
+  --name odp-backend \
+  --restart unless-stopped \
+  -p 8080:8080 \
+  -v odp_data:/data \
+  --env-file .env \
+  odp-platform \
+  uvicorn main:app --host 0.0.0.0 --port 8080 --workers 2
+```
+
+Differences from the dev command:
+- No `-v "$(pwd)/backend:/app"` — code comes from the built image
+- No `--reload` — removes the file-watcher that causes brief connection drops
+- `--restart unless-stopped` — Docker auto-restarts the container if it crashes
+- `--workers 2` — handles concurrent submissions without queuing
+
+### Production checklist
 
 - [ ] Change `ADMIN_PASSWORD` and `SECRET_KEY` in `.env`
 - [ ] Set `BASE_URL` to your public domain
 - [ ] Put a reverse proxy (Caddy / Nginx) with TLS in front
-- [ ] Remove `--reload` and the `-v "$(pwd)/backend:/app"` bind-mount from the run command
 - [ ] Schedule regular `make backup` runs
 
 ---
