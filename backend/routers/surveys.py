@@ -122,13 +122,14 @@ def get_survey(sid: int, request: Request, db: Session = Depends(get_db), _=Depe
 
 @router.post("", response_model=SurveyOut, status_code=201)
 def create_survey(
-    request:         Request,
-    title:           str        = Form(...),
-    description:     str        = Form(""),
-    n_per_evaluator: int        = Form(3),
-    csv_file:        UploadFile = File(...),
-    questions_json:  Optional[UploadFile] = File(None),
-    db:              Session    = Depends(get_db),
+    request:              Request,
+    title:                str        = Form(...),
+    description:          str        = Form(""),
+    n_per_evaluator:      int        = Form(3),
+    time_limit_minutes:   int        = Form(0),
+    csv_file:             UploadFile = File(...),
+    questions_json:       Optional[UploadFile] = File(None),
+    db:                   Session    = Depends(get_db),
     _=Depends(get_current_admin),
 ):
     content  = csv_file.file.read()
@@ -149,7 +150,7 @@ def create_survey(
     s.display_columns = auto_display_cols(headers)
     s.questions       = questions
     s.question_sets   = {"default": questions}
-    s.settings        = {"n_per_evaluator": min(n_per_evaluator, len(patterns)), "csv_headers": headers}
+    s.settings        = {"n_per_evaluator": min(n_per_evaluator, len(patterns)), "csv_headers": headers, "time_limit_minutes": time_limit_minutes}
     db.add(s); db.commit(); db.refresh(s)
     return to_out(s, request)
 
@@ -169,6 +170,8 @@ def update_survey(
     if body.questions       is not None: s.questions       = [q.model_dump() for q in body.questions]
     if body.n_per_evaluator is not None:
         cfg = s.settings; cfg["n_per_evaluator"] = min(body.n_per_evaluator, s.pattern_count); s.settings = cfg
+    if body.time_limit_minutes is not None:
+        cfg = s.settings; cfg["time_limit_minutes"] = body.time_limit_minutes; s.settings = cfg
     if body.question_sets is not None:
         s.question_sets = body.question_sets
         if "default" in body.question_sets:

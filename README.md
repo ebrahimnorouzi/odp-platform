@@ -99,7 +99,7 @@ title,Scenario
 | `scenario_id` | — | Unique ID used for question-set assignment |
 | `year` | — | Shown as a badge |
 | `pdf_link` | — | Linked as "📄 Paper" |
-| `ODPs links` | — | Linked as "🔗 ODP Wiki" |
+| `ODPs links` | — | Linked as "🔗 ODP Link" |
 | `CQs` | — | Competency questions block |
 | `Type` | — | Badge (ODP, Ontology, etc.) |
 | `include_in_eval` | — | Set `no` to exclude a row |

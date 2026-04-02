@@ -174,6 +174,11 @@ const Admin = (() => {
             <input name="n_per_evaluator" type="number" class="form-control" value="3" min="1" max="50" style="max-width:100px">
             <p class="mt-6" style="font-size:.75rem;color:var(--text-muted)">Each person gets this many randomly assigned patterns</p>
           </div>
+          <div class="form-group">
+            <label class="form-label">Estimated session time <span style="color:var(--text-muted)">(minutes, 0 = auto-calculate)</span></label>
+            <input name="time_limit_minutes" type="number" class="form-control" value="20" min="0" max="180" style="max-width:100px">
+            <p class="mt-6" style="font-size:.75rem;color:var(--text-muted)">Shown to evaluators on the welcome screen as an estimated duration</p>
+          </div>
           <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:8px">
             <button type="button" id="wz-cancel" class="btn btn-secondary">Cancel</button>
             <button type="submit" id="wz-ok" class="btn btn-primary">Create Survey →</button>
@@ -317,6 +322,7 @@ const Admin = (() => {
     const cols=(sv.settings?.csv_headers||Object.keys((sv.patterns||[])[0]||{}).filter(k=>!k.startsWith('_')));
     const sel=new Set(sv.display_columns);
     const nPer=sv.settings?.n_per_evaluator||3;
+    const tLim=sv.settings?.time_limit_minutes??20;
 
     pane.innerHTML=`
       <div class="card mb-16">
@@ -328,6 +334,11 @@ const Admin = (() => {
             <input id="cfg-n" type="number" class="form-control" value="${nPer}" min="1" max="${sv.pattern_count}" style="max-width:100px">
             <p class="mt-6" style="font-size:.75rem;color:var(--text-muted)">Max ${sv.pattern_count}</p>
           </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Estimated session time <span style="color:var(--text-muted)">(minutes, 0 = auto-calculate)</span></label>
+          <input id="cfg-tl" type="number" class="form-control" value="${tLim}" min="0" max="180" style="max-width:100px">
+          <p class="mt-6" style="font-size:.75rem;color:var(--text-muted)">Shown to evaluators on the welcome screen as an estimated duration</p>
         </div>
         <div class="form-group"><label class="form-label">Description</label><textarea id="cfg-d" class="form-control" rows="2">${esc(sv.description)}</textarea></div>
         <div style="display:flex;gap:8px;flex-wrap:wrap">
@@ -362,7 +373,7 @@ const Admin = (() => {
     renderPrev();
 
     $('#save-cfg',pane).onclick=async()=>{
-      try{await API.surveys.update(sv.id,{title:$('#cfg-t',pane).value,description:$('#cfg-d',pane).value,n_per_evaluator:+$('#cfg-n',pane).value});toast('Saved','success');}
+      try{await API.surveys.update(sv.id,{title:$('#cfg-t',pane).value,description:$('#cfg-d',pane).value,n_per_evaluator:+$('#cfg-n',pane).value,time_limit_minutes:+$('#cfg-tl',pane).value});toast('Saved','success');}
       catch(e){toast(e.message,'error');}
     };
     $('#save-cols',pane).onclick=async()=>{

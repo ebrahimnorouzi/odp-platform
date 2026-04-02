@@ -222,6 +222,7 @@ def start_session(slug: str, db: Session = Depends(get_db)):
         session_token=session.token, session_num=session.num,
         survey_title=s.title, survey_description=s.description,
         n_patterns=n_per, patterns=slim, questions=s.questions,
+        time_limit_minutes=s.settings.get("time_limit_minutes") or None,
     )
 
 

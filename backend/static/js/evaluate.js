@@ -4,10 +4,10 @@
 //  Keys are CSV column names; values are display strings.
 // ═══════════════════════════════════════════════════════
 const LINK_LABELS = {
-  'pdf_link':               '📄 Paper',
-  'ODPs links':             '🔗 ODP Wiki',
-  'CreativityTrack_link':   '📂 View Pattern (Creativity Track)',
-  'FunctionalityTrack_link':'📂 View Pattern (Functionality Track)',
+  'pdf_link': '📄 Paper',
+  'ODPs links': '🔗 ODP Link',
+  'CreativityTrack_link': '📂 View Pattern (Creativity Track)',
+  'FunctionalityTrack_link': '📂 View Pattern (Functionality Track)',
 };
 
 // ═══════════════════════════════════════════════════════
@@ -51,28 +51,28 @@ const Evaluate = (() => {
       const payload = await API.evaluate.start(slug);
       // Expand: one step per track link per pattern row
       const expanded = expandPatterns(payload.patterns);
-      payload.patterns   = expanded;
+      payload.patterns = expanded;
       payload.n_patterns = expanded.length;
-      state.payload   = payload;
+      state.payload = payload;
       state.startTime = Date.now();
       state.responses = expanded.map(p => ({
-        pattern_id:    p._id ?? 0,
+        pattern_id: p._id ?? 0,
         pattern_title: p.title || '',
-        pattern_link:  p._track ? (p[p._track] || '') : '',
-        started_at:    null,
-        completed_at:  null,
-        duration_ms:   null,
-        answers:       {}
+        pattern_link: p._track ? (p[p._track] || '') : '',
+        started_at: null,
+        completed_at: null,
+        duration_ms: null,
+        answers: {}
       }));
 
       document.title = payload.survey_title || 'ODP Evaluation';
       showWelcome();
-    } catch(e) {
+    } catch (e) {
       const msg = e.message.includes('403')
         ? 'This survey is not currently accepting responses.'
         : e.message.includes('404')
-        ? 'Survey not found. Please check your link.'
-        : e.message;
+          ? 'Survey not found. Please check your link.'
+          : e.message;
       showError(msg);
     }
   }
@@ -89,7 +89,7 @@ const Evaluate = (() => {
           <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin:28px 0;text-align:left">
             <div class="stat-card amber"><div class="stat-value">${p.n_patterns}</div><div class="stat-label">Patterns to review</div></div>
             <div class="stat-card cyan"><div class="stat-value">${p.questions.length}</div><div class="stat-label">Questions each</div></div>
-            <div class="stat-card violet"><div class="stat-value">~${Math.ceil(p.n_patterns*p.questions.filter(q=>q.type==='likert').length*0.3+p.n_patterns*2)} min</div><div class="stat-label">Estimated time</div></div>
+            <div class="stat-card violet"><div class="stat-value">~${p.time_limit_minutes || Math.ceil(p.n_patterns * p.questions.filter(q => q.type === 'likert').length * 0.3 + p.n_patterns * 2)} min</div><div class="stat-label">Estimated time</div></div>
           </div>
           <div class="alert alert-info mb-24" style="text-align:left">
             ℹ️ Your responses are saved automatically when you click Submit Survey at the end. You do not need to download or email anything.
@@ -99,11 +99,11 @@ const Evaluate = (() => {
               See your ${p.n_patterns} assigned patterns
             </summary>
             <div style="margin-top:12px">
-              ${p.patterns.map((pt,i)=>`
+              ${p.patterns.map((pt, i) => `
                 <div style="padding:8px 0;border-bottom:1px solid var(--border);font-size:.85rem;display:flex;align-items:baseline;gap:8px">
-                  <span style="font-family:var(--mono);color:var(--amber);font-size:.7rem;flex-shrink:0">#${i+1}</span>
-                  <span>${esc(pt.title || pt.id || 'Pattern '+(i+1))}</span>
-                  ${pt._track?`<span style="font-family:var(--mono);font-size:.68rem;color:var(--cyan);white-space:nowrap">${esc(trackLabel(pt._track))}</span>`:''}
+                  <span style="font-family:var(--mono);color:var(--amber);font-size:.7rem;flex-shrink:0">#${i + 1}</span>
+                  <span>${esc(pt.title || pt.id || 'Pattern ' + (i + 1))}</span>
+                  ${pt._track ? `<span style="font-family:var(--mono);font-size:.68rem;color:var(--cyan);white-space:nowrap">${esc(trackLabel(pt._track))}</span>` : ''}
                 </div>`).join('')}
             </div>
           </details>
@@ -147,162 +147,167 @@ const Evaluate = (() => {
     const { patterns } = state.payload;
     if (idx >= patterns.length) { submitAll(); return; }
 
-    const pat  = patterns[idx];
+    const pat = patterns[idx];
     const questions = pat._questions || state.payload.questions;
     const resp = state.responses[idx];
     if (!resp.started_at) resp.started_at = now();
     state.patternStart = Date.now();
-    state.current      = idx;
+    state.current = idx;
 
     // Progress
-    $('#prog-fill').style.width  = (idx / patterns.length * 100) + '%';
-    $('#prog-label').textContent = `Pattern ${idx+1} of ${patterns.length}`;
+    $('#prog-fill').style.width = (idx / patterns.length * 100) + '%';
+    $('#prog-label').textContent = `Pattern ${idx + 1} of ${patterns.length}`;
 
     const area = $('#pattern-area');
     area.innerHTML = '';
 
-    const card = el('div', { class:'pattern-card', style:'animation:fadeUp .3s ease both' });
+    const card = el('div', { class: 'pattern-card', style: 'animation:fadeUp .3s ease both' });
 
     // Header
     const tLabel = trackLabel(pat._track);
-    const hdr = el('div', { class:'pattern-card-header' });
+    const hdr = el('div', { class: 'pattern-card-header' });
     hdr.innerHTML = `
-      <div class="pattern-number">Pattern ${idx+1} of ${patterns.length}</div>
+      <div class="pattern-number">Pattern ${idx + 1} of ${patterns.length}</div>
       ${tLabel ? `<div style="margin:6px 0 2px;display:flex;align-items:center;gap:8px">
         <span style="font-family:var(--mono);font-size:.72rem;background:rgba(78,201,240,.12);color:var(--cyan);border:1px solid rgba(78,201,240,.3);padding:2px 10px;border-radius:20px">
           ${esc(tLabel)}
         </span>
       </div>` : ''}
-      <div class="pattern-title">${esc(getf(pat,'title') || pat.id || 'Pattern '+(idx+1))}</div>
+      <div class="pattern-title">${esc(getf(pat, 'title') || pat.id || 'Pattern ' + (idx + 1))}</div>
       <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">
-        ${getf(pat,'year')?`<span class="badge badge-muted">${esc(getf(pat,'year'))}</span>`:''}
-        ${getf(pat,'Type')||getf(pat,'type')?`<span class="badge badge-violet">${esc(getf(pat,'Type')||getf(pat,'type'))}</span>`:''}
+        ${getf(pat, 'year') ? `<span class="badge badge-muted">${esc(getf(pat, 'year'))}</span>` : ''}
+        ${getf(pat, 'Type') || getf(pat, 'type') ? `<span class="badge badge-violet">${esc(getf(pat, 'Type') || getf(pat, 'type'))}</span>` : ''}
       </div>
       <div class="pattern-links" style="margin-top:12px">
         ${pat._track && pat[pat._track] ? `
           <a class="btn btn-cyan btn-sm" href="${esc(pat[pat._track])}" target="_blank" rel="noopener"
              style="display:inline-flex;align-items:center;gap:6px;text-decoration:none">
             📂 Open &amp; review this generated ODP ↗
+          </a>
+          <a class="btn btn-ghost btn-sm" href="${esc(rdfGrapherUrl(pat[pat._track]))}" target="_blank" rel="noopener"
+             style="display:inline-flex;align-items:center;gap:6px;text-decoration:none" title="Visualize RDF graph">
+            🕸 View RDF Graph
           </a>` : ''}
         ${Object.keys(pat).filter(k => (k === 'pdf_link' || k === 'ODPs links') && pat[k]).map(k =>
-          `<a class="pattern-link" href="${esc(pat[k])}" target="_blank" rel="noopener">${esc(LINK_LABELS[k] || k)}</a>`
-        ).join('')}
+      `<a class="pattern-link" href="${esc(pat[k])}" target="_blank" rel="noopener">${esc(LINK_LABELS[k] || k)}</a>`
+      + (k === 'ODPs links' ? `<a class="pattern-link" href="${esc(rdfGrapherUrl(pat[k]))}" target="_blank" rel="noopener" title="Visualize RDF graph">🕸 RDF Graph</a>` : '')
+    ).join('')}
       </div>`;
     card.appendChild(hdr);
 
     // Body: content columns
-    const body = el('div', { class:'pattern-card-body' });
-    const skip = new Set(['title','Title','year','Year','pdf_link','ODPs links','_id','type','Type']);
+    const body = el('div', { class: 'pattern-card-body' });
+    const skip = new Set(['title', 'Title', 'year', 'Year', 'pdf_link', 'ODPs links', '_id', 'type', 'Type']);
     Object.keys(pat).filter(k => k.endsWith('_link')).forEach(k => skip.add(k));
     Object.keys(pat).filter(k => !skip.has(k) && !k.startsWith('_') && pat[k]).forEach(col => {
-      const blk = el('div', { class:`field-block ${/scenario/i.test(col)?'scenario':/cq|competency/i.test(col)?'cqs':''}` });
+      const blk = el('div', { class: `field-block ${/scenario/i.test(col) ? 'scenario' : /cq|competency/i.test(col) ? 'cqs' : ''}` });
       blk.innerHTML = `<div class="field-block-label">${esc(col)}</div><div class="field-block-content">${esc(pat[col])}</div>`;
       body.appendChild(blk);
     });
 
     // Evaluation questions
-    const evalSec = el('div', { class:'eval-section' });
-    evalSec.appendChild(html('h4',{},'✦ Your Evaluation'));
-    questions.forEach((q,qi) => evalSec.appendChild(buildWidget(q,qi,idx,resp)));
+    const evalSec = el('div', { class: 'eval-section' });
+    evalSec.appendChild(html('h4', {}, '✦ Your Evaluation'));
+    questions.forEach((q, qi) => evalSec.appendChild(buildWidget(q, qi, idx, resp)));
     body.appendChild(evalSec);
     card.appendChild(body);
 
     // Nav bar
     const isLast = idx === patterns.length - 1;
-    const nav = el('div', { class:'pattern-nav' });
-    if (idx > 0) nav.appendChild(el('button', { class:'btn btn-secondary', onclick:()=>saveGo(idx-1) }, '← Previous'));
+    const nav = el('div', { class: 'pattern-nav' });
+    if (idx > 0) nav.appendChild(el('button', { class: 'btn btn-secondary', onclick: () => saveGo(idx - 1) }, '← Previous'));
     else nav.appendChild(el('span'));
-    nav.appendChild(el('div', { style:'display:flex;gap:8px;align-items:center' },
-      el('span', { style:'font-family:var(--mono);font-size:.72rem;color:var(--text-muted)' }, `${idx+1}/${patterns.length}`),
-      el('button', { class:`btn ${isLast?'btn-primary':'btn-cyan'}`, onclick:()=>saveGo(idx+1) },
+    nav.appendChild(el('div', { style: 'display:flex;gap:8px;align-items:center' },
+      el('span', { style: 'font-family:var(--mono);font-size:.72rem;color:var(--text-muted)' }, `${idx + 1}/${patterns.length}`),
+      el('button', { class: `btn ${isLast ? 'btn-primary' : 'btn-cyan'}`, onclick: () => saveGo(idx + 1) },
         isLast ? '✓ Submit Survey' : 'Next Pattern →')
     ));
     card.appendChild(nav);
 
     area.appendChild(card);
-    window.scrollTo({ top:0, behavior:'smooth' });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
   // ── Question widget ────────────────────────────────────────────
   function buildWidget(q, qi, patIdx, resp) {
-    const wrap = el('div', { class:'question-item', 'data-qid':q.id });
-    wrap.appendChild(html('div', { class:'question-label' },
-      `<span class="q-num">Q${qi+1}</span> ${esc(q.label)}${q.required?' <span class="q-req">*</span>':''}`
+    const wrap = el('div', { class: 'question-item', 'data-qid': q.id });
+    wrap.appendChild(html('div', { class: 'question-label' },
+      `<span class="q-num">Q${qi + 1}</span> ${esc(q.label)}${q.required ? ' <span class="q-req">*</span>' : ''}`
     ));
-    if (q.help) wrap.appendChild(html('p', { style:'font-size:.82rem;color:var(--text-muted);margin-bottom:12px' }, esc(q.help)));
+    if (q.help) wrap.appendChild(html('p', { style: 'font-size:.82rem;color:var(--text-muted);margin-bottom:12px' }, esc(q.help)));
 
     const name = `p${patIdx}_${q.id}`;
-    const cur  = resp.answers[q.id];
+    const cur = resp.answers[q.id];
 
     if (q.type === 'likert') {
       const scale = q.scale || 5;
-      const grp   = el('div', { class:'likert-group' });
+      const grp = el('div', { class: 'likert-group' });
       for (let n = 1; n <= scale; n++) {
-        const id  = `${name}_${n}`;
-        const inp = el('input', { class:'likert-option', type:'radio', name, id, value:String(n) });
+        const id = `${name}_${n}`;
+        const inp = el('input', { class: 'likert-option', type: 'radio', name, id, value: String(n) });
         if (String(cur) === String(n)) inp.checked = true;
         inp.addEventListener('change', () => { resp.answers[q.id] = n; });
         grp.appendChild(inp);
-        grp.appendChild(html('label', { for:id }, `<span class="likert-num">${n}</span>`));
+        grp.appendChild(html('label', { for: id }, `<span class="likert-num">${n}</span>`));
       }
       wrap.appendChild(grp);
       if (q.labels?.length >= 2)
-        wrap.appendChild(el('div', { class:'likert-labels' }, el('span',{},q.labels[0]), el('span',{},q.labels[1])));
+        wrap.appendChild(el('div', { class: 'likert-labels' }, el('span', {}, q.labels[0]), el('span', {}, q.labels[1])));
     } else if (q.type === 'boolean') {
-      const grp = el('div', { class:'likert-group' });
-      ['yes','no'].forEach(val => {
-        const id  = `${name}_${val}`;
-        const inp = el('input', { class:'likert-option', type:'radio', name, id, value:val });
+      const grp = el('div', { class: 'likert-group' });
+      ['yes', 'no'].forEach(val => {
+        const id = `${name}_${val}`;
+        const inp = el('input', { class: 'likert-option', type: 'radio', name, id, value: val });
         if (cur === val) inp.checked = true;
         inp.addEventListener('change', () => { resp.answers[q.id] = val; });
         grp.appendChild(inp);
-        grp.appendChild(html('label', { for:id }, `<span class="likert-num">${val==='yes'?'✓':'✗'}</span><span>${val==='yes'?'Yes':'No'}</span>`));
+        grp.appendChild(html('label', { for: id }, `<span class="likert-num">${val === 'yes' ? '✓' : '✗'}</span><span>${val === 'yes' ? 'Yes' : 'No'}</span>`));
       });
       wrap.appendChild(grp);
     } else if (q.type === 'select') {
-      const sel = el('select', { class:'form-control', name });
-      sel.appendChild(el('option', { value:'' }, '— Select —'));
-      (q.options||[]).forEach(opt => { const o=el('option',{value:opt},opt); if(cur===opt)o.selected=true; sel.appendChild(o); });
+      const sel = el('select', { class: 'form-control', name });
+      sel.appendChild(el('option', { value: '' }, '— Select —'));
+      (q.options || []).forEach(opt => { const o = el('option', { value: opt }, opt); if (cur === opt) o.selected = true; sel.appendChild(o); });
       sel.addEventListener('change', () => { resp.answers[q.id] = sel.value; });
       wrap.appendChild(sel);
     } else if (q.type === 'textarea') {
-      const ta = el('textarea', { class:'form-control', name, placeholder:q.placeholder||'', rows:'4' });
+      const ta = el('textarea', { class: 'form-control', name, placeholder: q.placeholder || '', rows: '4' });
       if (cur) ta.value = cur;
       ta.addEventListener('input', () => { resp.answers[q.id] = ta.value; });
       wrap.appendChild(ta);
     } else {
-      const inp = el('input', { type:'text', class:'form-control', name, placeholder:q.placeholder||'' });
+      const inp = el('input', { type: 'text', class: 'form-control', name, placeholder: q.placeholder || '' });
       if (cur) inp.value = cur;
       inp.addEventListener('input', () => { resp.answers[q.id] = inp.value; });
       wrap.appendChild(inp);
     }
 
-    wrap.appendChild(el('div', { class:'field-error hidden', id:`err-${name}` }, 'This field is required'));
+    wrap.appendChild(el('div', { class: 'field-error hidden', id: `err-${name}` }, 'This field is required'));
     return wrap;
   }
 
   // ── Validate + navigate ────────────────────────────────────────
   function saveGo(next) {
-    const idx  = state.current;
+    const idx = state.current;
     const resp = state.responses[idx];
-    const pat  = state.payload.patterns[idx];
-    const qs   = pat._questions || state.payload.questions;
+    const pat = state.payload.patterns[idx];
+    const qs = pat._questions || state.payload.questions;
     let ok = true;
     qs.forEach(q => {
       const errEl = document.getElementById(`err-p${idx}_${q.id}`);
       if (!errEl) return;
-      const val     = resp.answers[q.id];
-      const missing = q.required && (val===undefined || val===null || String(val).trim()==='');
+      const val = resp.answers[q.id];
+      const missing = q.required && (val === undefined || val === null || String(val).trim() === '');
       errEl.classList.toggle('hidden', !missing);
       if (missing) ok = false;
     });
     if (!ok) {
       toast('Please answer all required questions before continuing', 'error');
-      document.querySelector('.field-error:not(.hidden)')?.scrollIntoView({ behavior:'smooth', block:'center' });
+      document.querySelector('.field-error:not(.hidden)')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
       return;
     }
     resp.completed_at = now();
-    resp.duration_ms  = Date.now() - state.patternStart;
+    resp.duration_ms = Date.now() - state.patternStart;
     if (next >= state.payload.patterns.length) submitAll();
     else showPattern(next);
   }
@@ -310,8 +315,8 @@ const Evaluate = (() => {
   // ── Submit to API ──────────────────────────────────────────────
   async function submitAll() {
     const sessionMs = Date.now() - state.startTime;
-    const area      = $('#pattern-area');
-    area.innerHTML  = `
+    const area = $('#pattern-area');
+    area.innerHTML = `
       <div style="text-align:center;padding:60px 24px">
         <div class="spinner" style="margin:0 auto 16px"></div>
         <p style="font-family:var(--mono);color:var(--text-muted)">Saving your responses…</p>
@@ -319,12 +324,12 @@ const Evaluate = (() => {
 
     try {
       await API.evaluate.submit({
-        session_token:       state.payload.session_token,
-        responses:           state.responses,
+        session_token: state.payload.session_token,
+        responses: state.responses,
         session_duration_ms: sessionMs,
       });
       showDone(sessionMs);
-    } catch(e) {
+    } catch (e) {
       if (e.message.includes('409')) {
         showDone(sessionMs, true);
       } else {
@@ -335,7 +340,7 @@ const Evaluate = (() => {
     }
   }
 
-  function showDone(sessionMs, alreadyDone=false) {
+  function showDone(sessionMs, alreadyDone = false) {
     $('#prog-fill').style.width = '100%';
     $('#prog-label').textContent = 'All patterns completed ✓';
     const area = $('#pattern-area');
@@ -345,8 +350,8 @@ const Evaluate = (() => {
         <h2>Thank You!</h2>
         <p style="max-width:440px;margin:0 auto 32px">
           ${alreadyDone
-            ? 'Your responses were already recorded.'
-            : `Your evaluation of <strong>${state.payload.n_patterns} patterns</strong> has been saved. The survey coordinator can now see your results.`}
+        ? 'Your responses were already recorded.'
+        : `Your evaluation of <strong>${state.payload.n_patterns} patterns</strong> has been saved. The survey coordinator can now see your results.`}
         </p>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;max-width:340px;margin:0 auto 32px;text-align:left">
           <div class="stat-card amber"><div class="stat-value">${state.payload.n_patterns}</div><div class="stat-label">Patterns evaluated</div></div>
@@ -369,8 +374,24 @@ const Evaluate = (() => {
       </div>`;
   }
 
-  function getf(obj,k) { if(obj[k]!=null)return obj[k]; const lk=k.toLowerCase(); for(const kk of Object.keys(obj)) if(kk.toLowerCase()===lk)return obj[kk]; return ''; }
-  function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+  function getf(obj, k) { if (obj[k] != null) return obj[k]; const lk = k.toLowerCase(); for (const kk of Object.keys(obj)) if (kk.toLowerCase() === lk) return obj[kk]; return ''; }
+  function esc(s) { return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+
+  // Convert a GitHub blob URL to its raw content URL
+  function toRawUrl(url) {
+    return url.replace('https://github.com/', 'https://raw.githubusercontent.com/')
+      .replace('/blob/', '/');
+  }
+
+  // Build a URL for the ldf.fi RDF grapher service
+  function rdfGrapherUrl(url) {
+    const raw = /github\.com/.test(url) ? toRawUrl(url) : url;
+    const fmt = /\.owl$|\.rdf$|\.xml$/i.test(url) ? 'rdfxml'
+      : /\.n3$/i.test(url) ? 'n3'
+        : /\.nt$/i.test(url) ? 'ntriples'
+          : 'turtle'; // default: Turtle / TTL
+    return `https://www.ldf.fi/service/rdf-grapher?rdf=${encodeURIComponent(raw)}&from=${fmt}`;
+  }
 
   return { init };
 })();

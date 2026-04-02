@@ -20,9 +20,10 @@ class Question(BaseModel):
 
 # ── Survey ─────────────────────────────────────────────────────────────────
 class SurveyCreate(BaseModel):
-    title:           str
-    description:     str  = ""
-    n_per_evaluator: int  = Field(3, ge=1, le=200)
+    title:                str
+    description:          str  = ""
+    n_per_evaluator:      int  = Field(3, ge=1, le=200)
+    time_limit_minutes:   int  = Field(0, ge=0)   # 0 = no limit
 
 class SurveyUpdate(BaseModel):
     title:                Optional[str]            = None
@@ -30,6 +31,7 @@ class SurveyUpdate(BaseModel):
     display_columns:      Optional[list[str]]      = None
     questions:            Optional[list[Question]] = None
     n_per_evaluator:      Optional[int]            = None
+    time_limit_minutes:   Optional[int]            = None
     question_sets:        Optional[dict]           = None
     pattern_question_map: Optional[dict]           = None
 
@@ -62,13 +64,14 @@ class SurveyDetail(SurveyOut):
 # ── Public survey session ──────────────────────────────────────────────────
 class StartSessionOut(BaseModel):
     """Returned when evaluator opens a published survey link."""
-    session_token:   str
-    session_num:     int
-    survey_title:    str
-    survey_description: str
-    n_patterns:      int
-    patterns:        list[dict]
-    questions:       list[dict]
+    session_token:       str
+    session_num:         int
+    survey_title:        str
+    survey_description:  str
+    n_patterns:          int
+    patterns:            list[dict]
+    questions:           list[dict]
+    time_limit_minutes:  Optional[int] = None  # None / 0 = no limit
 
 
 # ── Response submission ────────────────────────────────────────────────────
