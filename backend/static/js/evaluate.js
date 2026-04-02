@@ -386,10 +386,10 @@ const Evaluate = (() => {
   // Build a URL for the ldf.fi RDF grapher service
   function rdfGrapherUrl(url) {
     const raw = /github\.com/.test(url) ? toRawUrl(url) : url;
-    const fmt = /\.owl$|\.rdf$|\.xml$/i.test(url) ? 'rdfxml'
+    const fmt = /\.owl$|\.rdf$|\.xml$/i.test(url) ? 'xml'
       : /\.n3$/i.test(url) ? 'n3'
-        : /\.nt$/i.test(url) ? 'ntriples'
-          : 'turtle'; // default: Turtle / TTL
+        : /\.nt$/i.test(url) ? 'nt'
+          : 'ttl'; // default: Turtle / TTL
     return `https://www.ldf.fi/service/rdf-grapher?rdf=${encodeURIComponent(raw)}&from=${fmt}`;
   }
 
