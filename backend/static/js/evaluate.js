@@ -383,14 +383,11 @@ const Evaluate = (() => {
       .replace('/blob/', '/');
   }
 
-  // Build a URL for the ldf.fi RDF grapher service
+  // Build a WebVOWL URL to visualize the RDF graph.
+  // WebVOWL (hosted by TIB) loads the ontology directly from a raw IRI.
   function rdfGrapherUrl(url) {
     const raw = /github\.com/.test(url) ? toRawUrl(url) : url;
-    const fmt = /\.owl$|\.rdf$|\.xml$/i.test(url) ? 'xml'
-      : /\.n3$/i.test(url) ? 'n3'
-        : /\.nt$/i.test(url) ? 'nt'
-          : 'ttl'; // default: Turtle / TTL
-    return `https://www.ldf.fi/service/rdf-grapher?rdf=${encodeURIComponent(raw)}&from=${fmt}`;
+    return `https://service.tib.eu/webvowl/#iri=${encodeURIComponent(raw)}`;
   }
 
   return { init };
